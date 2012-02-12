@@ -13,6 +13,7 @@ class ElectricField(object):
         self.carrier_freq = (335.116048807e12-4.021776399375e9)*2*np.pi # carrier frequency in rad
         self.repetition_freq = 100e6*2*np.pi # repetition frequency in rad
         self.cutoff = 2e-13#where electric field start consider to be zero
+
     def envelope(self,t):
         """
         the envelope function must start from t = 0
@@ -48,6 +49,7 @@ class ElectricField(object):
         x = np.arange(0, ef.cutoff, Ts)
         env_vec = np.vectorize(ef.envelope)
         y = env_vec(x)
+        print "please check if rotating wave approximation is valid."
         # plot envelope and its spectrum
         subplot(2,1,1)
         plot(x,y)
@@ -60,12 +62,4 @@ class ElectricField(object):
 if __name__ == '__main__':
     ef = ElectricField()
     ef.check()
-
-
-
-
-
-
-
-
 

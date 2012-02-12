@@ -131,8 +131,8 @@ class Parameter(object):
                 j2 = 1.0/2.0
             else:
                 j2 = 3.0/2.0
-            n=self.parameter['n']
-            tmp = [[0 for i in range(n)] for j in range(n)]
+            n=self.parameter['n'] # number of levels (include sub levels)
+            tmp = [[0 for i in range(n)] for j in range(n)] # make a nxn matrix
             cs = Atom()
             for i in range(n):
                 for j in range(n):
