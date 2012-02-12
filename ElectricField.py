@@ -1,6 +1,7 @@
 import numpy as np
-import matplotlib.pyplot as plt
-import scipy.integrate as integrate
+#import matplotlib.pyplot as plt
+from pylab import plot, show, title, xlabel, ylabel, subplot
+from scipy import fft, integrate
 
 class ElectricField(object):
     """
@@ -20,17 +21,42 @@ class ElectricField(object):
         maxima = 1e6
         return maxima*np.exp(-(t-sigma*5)**2/(2*sigma**2))
 
+    def plotSpectrum(self,y,Ts):
+        """
+        Plots a Single-Sided Amplitude Spectrum of y(t)
+        """
+        Fs = 1/Ts
+        n = len(y) # length of the signal
+        k = np.arange(n)
+        T = n/Fs
+        frq = k/T # two sides frequency range
+        frq = frq[range(n/2)] # one side frequency range
+    
+        Y = fft(y)/n # fft computing and normalization
+        Y = Y[range(n/2)]
+        
+        plot(frq,abs(Y),'r') # plotting the spectrum
+        xlabel('Freq (Hz)')
+        ylabel('|Y(freq)|')
+
     def check(self,):
         print "rabi frequency area: "
         print 4e5*integrate.quad(ef.envelope,0,ef.cutoff)[0] #4e5 is dipole moment / hbar
         print "average power:"
         print str(8.85e-12/2*integrate.quad(lambda x:ef.envelope(x)**2,0,ef.cutoff)[0]/(2*np.pi/ef.repetition_freq))+"w/m^2"
-        x = np.arange(0, ef.cutoff, ef.cutoff/500.0)
+        Ts = ef.cutoff/500.0
+        x = np.arange(0, ef.cutoff, Ts)
         env_vec = np.vectorize(ef.envelope)
         y = env_vec(x)
-        plt.plot(x, y)
-        plt.show()
-    
+        # plot envelope and its spectrum
+        subplot(2,1,1)
+        plot(x,y)
+        xlabel('Time')
+        ylabel('Amplitude')
+        subplot(2,1,2)
+        self.plotSpectrum(y,Ts)
+        show()
+
 if __name__ == '__main__':
     ef = ElectricField()
     ef.check()
