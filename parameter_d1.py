@@ -33,7 +33,7 @@ if __name__ == '__main__':
     arg_dict = {
         'l1f':(4,3),#p and f = 4 and 3
         'l0f':(4,3),#s and f = 4 and 3
-        'B':0.01,#magnetic field
+        'B':0.00,#magnetic field
         'd1':1,#d1
         'gamma':5.0,#little gamma
         'egpair':(((1,3),(0,4)),((1,3),(0,3)),((1,4),(0,4)),((1,4),(0,3))),
