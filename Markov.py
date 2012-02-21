@@ -32,9 +32,10 @@ if __name__ == '__main__':
     print 'markov test'
     markov = Markov()
     print markov.n
-    print markov.parameter['decoherence_matrix'][0][0]
+    print markov.parameter['decoherence_matrix'][1][2]
+    print markov.parameter['decoherence_matrix'][2][1]
     markov.n = 4
-    for i in range(4):
-        for j in range(i,4):
-            print i,j
-            print "idx",markov.ij2idx(i,j)
+    # for i in range(4):
+    #     for j in range(i,4):
+    #         print i,j
+    #         print "idx",markov.ij2idx(i,j)
