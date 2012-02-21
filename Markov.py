@@ -64,9 +64,13 @@ if __name__ == '__main__':
     #     print markov.omega[i]
     #print markov.decoherence[0][0]
     print markov.T
+    state = np.zeros((markov.N,1),complex)
+    state [0][0] = 1.0
+    print state
+    result = linalg.expm(markov.T*1e-9,20)
+
     for i in range(100):
-        result = linalg.expm(markov.T*1e-14,20)
-        print i
-    print result
+        state =  np.dot(result,state)
+        print np.real(state[markov.N-1][0])
 
     
