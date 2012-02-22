@@ -21,8 +21,15 @@ class Markov(object):
         self.n = self.parameter['n']# number of levels
         self.N = ((self.n+1)*self.n)/2# the number of independent terms in  markov matrix
         self.decoherence = self.parameter['decoherence_matrix']
+        
         self.T = np.zeros((self.N,self.N),complex) # time independent part d rho/ dt = T rho
+        self.final = np.zeros((self.N,self.N),complex) # final markov matrix
+        
         self.EField = ElectricField()
+        self.tsample = np.linspace(0,self.EField.cutoff,self.EField.sample)
+        #self.Dfunction = [np.zeros((self.N,self.N),complex) for i in range(self.EField.sample)] # time dependent part
+        self.Dfunction=[]
+        self.order = 0
         dictf.close()
 
     def ij2idx(self,i,j):
@@ -53,23 +60,36 @@ class Markov(object):
         for i in range(self.n):
              for j in range(i+1,self.n):
                  self.T[self.ij2idx(i,j)][self.ij2idx(i,j)]+= -1.0j*self.rotate_omega(i,j)
-             
+                 
+    def zeroOrder(self):
+        for i in enumerate(self.tsample):
+            print i[0]
+            self.Dfunction.append(linalg.expm(markov.T*i[1]))
+
+    def addOrder(self):
+        self.order += 1
+        for i in range(self.n):
+            for j in range(i,self.n):
+                # plus H rho
+                # minus rho H
+                pass
+    
+    def finalResult(self):
+        time = 2*np.pi/self.EField.repetition_freq-self.EField.cutoff
+        print time
+        self.final = np.dot(self.Dfunction[-1],linalg.expm(markov.T*time))
+    
 if __name__ == '__main__':
     print 'markov test'
     markov = Markov()
-    print "markov.n = ",markov.n
-    print "markov.N = ",markov.N
     markov.prepareT()
     # for i in range(markov.n):
     #     print markov.omega[i]
     #print markov.decoherence[0][0]
-    print markov.T
     state = np.zeros((markov.N,1),complex)
     state [0][0] = 1.0
-    print state
     result = linalg.expm(markov.T*1e-9,20)
+    markov.zeroOrder()
 
-    for i in range(100):
-        state =  np.dot(result,state)
-        print np.real(state[markov.N-1][0])
-
+    markov.finalResult()
+    print markov.final
