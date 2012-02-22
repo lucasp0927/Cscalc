@@ -72,6 +72,7 @@ class Markov(object):
             for j in range(i,self.n):
                 # plus H rho
                 # minus rho H
+                # T
                 pass
     
     def finalResult(self):
