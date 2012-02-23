@@ -28,7 +28,8 @@ class Markov(object):
         self.EField = ElectricField()
         self.tsample = np.linspace(0,self.EField.cutoff,self.EField.sample)
         #self.Dfunction = [np.zeros((self.N,self.N),complex) for i in range(self.EField.sample)] # time dependent part
-        self.Dfunction=[]
+        self.Dfunction = np.empty((self.N,self.N,self.EField.sample),complex)
+        self.DfunctionTemp = np.empty((self.N,self.N,self.EField.sample),complex)        
         self.order = 0
         dictf.close()
 
@@ -64,33 +65,38 @@ class Markov(object):
     def zeroOrder(self):
         for i in enumerate(self.tsample):
             print i[0]
-            self.Dfunction.append(linalg.expm(markov.T*i[1]))
+            self.Dfunction[:,:,i[0]]=linalg.expm(markov.T*i[1])
 
     def addOrder(self):
-        self.order += 1
-        for i in range(self.n):
-            for j in range(i,self.n):
-                # plus H rho
-                # minus rho H
-                # T
+        for i in range(int(self.N)):
+            for j in range(i,int(self.N)):
+                # calculate F_ij
                 pass
-    
+        self.order += 1            
+        self.Dfunction = self.DfunctionTemp
+        
+    def integrate(self,i,j):
+        if i==j:
+            init = 1
+        else:
+            init = 0
+        for i in range(self.N):
+            pass
+        
     def finalResult(self):
         time = 2*np.pi/self.EField.repetition_freq-self.EField.cutoff
         print time
-        self.final = np.dot(self.Dfunction[-1],linalg.expm(markov.T*time))
+        self.final = np.dot(self.Dfunction[:,:,-1],linalg.expm(markov.T*time)) # check this
     
 if __name__ == '__main__':
-    print 'markov test'
     markov = Markov()
-    markov.prepareT()
-    # for i in range(markov.n):
-    #     print markov.omega[i]
-    #print markov.decoherence[0][0]
-    state = np.zeros((markov.N,1),complex)
-    state [0][0] = 1.0
-    result = linalg.expm(markov.T*1e-9,20)
-    markov.zeroOrder()
+    # markov.prepareT()
+    # state = np.zeros((markov.N,1),complex)
+    # state [0][0] = 1.0
+    # result = linalg.expm(markov.T*1e-9,20)
+    # markov.zeroOrder()
+    # markov.addOrder()
+    # markov.finalResult()
+    # print markov.Dfunction[:,:,0]    
+    # print markov.final
 
-    markov.finalResult()
-    print markov.final
