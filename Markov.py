@@ -3,8 +3,10 @@ from __future__ import division
 import sys
 from ElectricField import ElectricField
 import numpy as np
-from scipy import linalg
+from scipy import linalg,integrate
+from scipy.signal import cspline1d, cspline1d_eval
 
+HBAR =  1.05457148e-34
 class Markov(object):
     """
     """
@@ -17,31 +19,35 @@ class Markov(object):
         dictf = open(file_in,'r')
         self.parameter = eval(dictf.read())
         self.omega = self.parameter['omega']
-        self.group = self.parameter['level_group']                
+        self.group = self.parameter['level_group']
+        self.dipole = self.parameter['dipole'][0]
+        #print self.dipole
         self.n = self.parameter['n']# number of levels
-        self.N = ((self.n+1)*self.n)/2# the number of independent terms in  markov matrix
+        self.N = self.n**2 # the number of independent terms in  density matrix
         self.decoherence = self.parameter['decoherence_matrix']
         
         self.T = np.zeros((self.N,self.N),complex) # time independent part d rho/ dt = T rho
+        self.D = np.zeros((self.N,self.N),complex) # time independent part d rho/ dt = T rho        
         self.final = np.zeros((self.N,self.N),complex) # final markov matrix
+
         
         self.EField = ElectricField()
-        self.tsample = np.linspace(0,self.EField.cutoff,self.EField.sample)
+        self.smpnum = self.EField.sample
+        self.tsample = np.linspace(0,self.EField.cutoff,self.smpnum)
         #self.Dfunction = [np.zeros((self.N,self.N),complex) for i in range(self.EField.sample)] # time dependent part
-        self.Dfunction = np.empty((self.N,self.N,self.EField.sample),complex)
-        self.DfunctionTemp = np.empty((self.N,self.N,self.EField.sample),complex)        
+        self.Dfunction = np.empty((self.N,self.N,self.smpnum),complex)
+        self.DfunctionTemp = np.empty((self.N,self.N,self.smpnum),complex)        
         self.order = 0
         dictf.close()
 
     def ij2idx(self,i,j):
         """
         0 1 2
-          3 4
-            5
+        3 4 5
+        6 7 8
         """
-        assert i <= j             # i row j column
-        idx = (i*(2*self.n-i+1))/2+(j-i)
-        assert idx < self.N
+        #idx = (i*(2*self.n-i+1))/2+(j-i)
+        idx = self.n*i+j
         return idx
 
     def rotate_omega(self,i,j):
@@ -58,10 +64,20 @@ class Markov(object):
             for j in range(i,self.n):
                 for k in self.decoherence[i][j]:
                     self.T[self.ij2idx(i,j)][self.ij2idx(k[0],k[1])]+=k[2]
+                    self.T[self.ij2idx(j,i)][self.ij2idx(k[1],k[0])]+=k[2]                    
         for i in range(self.n):
              for j in range(i+1,self.n):
                  self.T[self.ij2idx(i,j)][self.ij2idx(i,j)]+= -1.0j*self.rotate_omega(i,j)
+                 self.T[self.ij2idx(j,i)][self.ij2idx(j,i)]+= 1.0j*self.rotate_omega(i,j)             
                  
+    def prepareD(self):
+        for i in range(self.n):
+            for j in range(self.n):
+                for k in range(self.n):
+                    self.D[self.ij2idx(i,j)][self.ij2idx(k,j)] += -1.0j*(self.dipole[i][k] )/ HBAR
+                    self.D[self.ij2idx(i,j)][self.ij2idx(i,k)] -= -1.0j*(self.dipole[k][j] )/ HBAR                    
+                
+    
     def zeroOrder(self):
         for i in enumerate(self.tsample):
             print i[0]
@@ -75,28 +91,32 @@ class Markov(object):
         self.order += 1            
         self.Dfunction = self.DfunctionTemp
         
-    def integrate(self,i,j):
-        if i==j:
+    def integrate(self,I,J):
+        if I==J:
             init = 1
         else:
             init = 0
-        for i in range(self.N):
-            pass
+        slope = np.zeros(self.smpnum,complex) 
+        for i in range(self.smpnum):
+            for k in range(self.N):
+                slope[i] += (self.T[I][k]+self.EField.envelope(self.tsample[i])*self.D[I][k])*self.Dfunction[k,J,i]
+        # interpolate slope
+        slope_r = np.real(slope)
+        slope_i = np.imag(slope)
+        
         
     def finalResult(self):
         time = 2*np.pi/self.EField.repetition_freq-self.EField.cutoff
-        print time
-        self.final = np.dot(self.Dfunction[:,:,-1],linalg.expm(markov.T*time)) # check this
+        self.final = np.dot(self.Dfunction[:,:,-1],linalg.expm(self.T*time)) # check this
     
 if __name__ == '__main__':
     markov = Markov()
-    # markov.prepareT()
-    # state = np.zeros((markov.N,1),complex)
-    # state [0][0] = 1.0
-    # result = linalg.expm(markov.T*1e-9,20)
-    # markov.zeroOrder()
-    # markov.addOrder()
-    # markov.finalResult()
-    # print markov.Dfunction[:,:,0]    
-    # print markov.final
+    markov.prepareT()
+    markov.prepareD()    
+    markov.zeroOrder()
+    markov.integrate(0,0)
+    #markov.addOrder()
+    #markov.finalResult()
+    print markov.Dfunction[:,:,0]    
+
 
