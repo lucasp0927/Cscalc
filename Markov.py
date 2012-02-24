@@ -4,7 +4,8 @@ import sys
 from ElectricField import ElectricField
 import numpy as np
 from scipy import linalg,integrate
-from scipy.signal import cspline1d, cspline1d_eval
+from scipy.interpolate import interp1d
+import matplotlib.pyplot as plt
 
 HBAR =  1.05457148e-34
 class Markov(object):
@@ -90,21 +91,41 @@ class Markov(object):
                 pass
         self.order += 1            
         self.Dfunction = self.DfunctionTemp
-        
+
+    def calcSlope(self,I,J,i):
+        ans = 0.0 + 0.0j
+        for k in range(self.N):
+            ans += (self.T[I][k]+self.EField.envelope(self.tsample[i])*self.D[I][k])*self.Dfunction[k,J,i]
+            #ans += self.EField.envelope(self.tsample[i])
+        return ans
+
     def integrate(self,I,J):
         if I==J:
             init = 1
         else:
             init = 0
-        slope = np.zeros(self.smpnum,complex) 
-        for i in range(self.smpnum):
-            for k in range(self.N):
-                slope[i] += (self.T[I][k]+self.EField.envelope(self.tsample[i])*self.D[I][k])*self.Dfunction[k,J,i]
+        # slope = np.zeros(self.smpnum,complex) 
+        # for i in range(self.smpnum):
+        #     for k in range(self.N):
+        #         slope[i] += (self.T[I][k]+self.EField.envelope(self.tsample[i])*self.D[I][k])*self.Dfunction[k,J,i]
+        slopfunc = np.vectorize(self.calcSlope)
+        slope = slopfunc(I,J,np.arange(self.smpnum))
         # interpolate slope
         slope_r = np.real(slope)
         slope_i = np.imag(slope)
-        
-        
+        slope_r_int = interp1d(self.tsample,slope_r,kind='cubic')
+        slope_i_int = interp1d(self.tsample,slope_i,kind='cubic') # spline representation
+        def slp(x,t):
+            return slope_r_int(t)
+            #return 0
+        result = integrate.odeint(slp,init,self.tsample)
+#        print interpolate.splev(self.tsample,spr,der=0)
+ #       print result
+        plt.figure()
+#        plt.plot(self.tsample,slope_r,'x',self.tsample,slope_r_int(self.tsample),self.tsample,result)
+        plt.plot(self.tsample,result)
+        plt.show()
+
     def finalResult(self):
         time = 2*np.pi/self.EField.repetition_freq-self.EField.cutoff
         self.final = np.dot(self.Dfunction[:,:,-1],linalg.expm(self.T*time)) # check this
@@ -117,6 +138,5 @@ if __name__ == '__main__':
     markov.integrate(0,0)
     #markov.addOrder()
     #markov.finalResult()
-    print markov.Dfunction[:,:,0]    
 
 
