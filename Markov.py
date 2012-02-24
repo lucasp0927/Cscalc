@@ -34,6 +34,7 @@ class Markov(object):
         
         self.EField = ElectricField()
         self.smpnum = self.EField.sample
+        self.cutoff = self.EField.cutoff
         self.tsample = np.linspace(0,self.EField.cutoff,self.smpnum)
         #self.Dfunction = [np.zeros((self.N,self.N),complex) for i in range(self.EField.sample)] # time dependent part
         self.Dfunction = np.empty((self.N,self.N,self.smpnum),complex)
@@ -87,11 +88,12 @@ class Markov(object):
     def addOrder(self):
         for i in range(int(self.N)):
             for j in range(i,int(self.N)):
-                # calculate F_ij
-                pass
+                print i,j
+                self.integrate(i,j)
+
         self.order += 1            
         self.Dfunction = self.DfunctionTemp
-
+        
     def calcSlope(self,I,J,i):
         ans = 0.0 + 0.0j
         for k in range(self.N):
@@ -115,16 +117,19 @@ class Markov(object):
         slope_i = np.imag(slope)
         slope_r_int = interp1d(self.tsample,slope_r,kind='cubic')
         slope_i_int = interp1d(self.tsample,slope_i,kind='cubic') # spline representation
-        def slp(x,t):
-            return slope_r_int(t)
+        def slp(x,t,interpolater):
+            xs = interpolater.x
+            ys = interpolater.y
+            if t < xs[0]:
+                return ys[0]+(t-xs[0])*(ys[1]-ys[0])/(xs[1]-xs[0])
+            elif t > xs[-1]:
+                return ys[-1]+(t-xs[-1])*(ys[-1]-ys[-2])/(xs[-1]-xs[-2])
+            else:
+                return interpolater(t)
             #return 0
-        result = integrate.odeint(slp,init,self.tsample)
-#        print interpolate.splev(self.tsample,spr,der=0)
- #       print result
-        plt.figure()
-#        plt.plot(self.tsample,slope_r,'x',self.tsample,slope_r_int(self.tsample),self.tsample,result)
-        plt.plot(self.tsample,result)
-        plt.show()
+        result_r = integrate.odeint(slp,init,self.tsample,args=(slope_r_int,))
+        result_i = integrate.odeint(slp,init,self.tsample,args=(slope_i_int,))
+        self.DfunctionTemp[I,J,:] = np.transpose(result_r + 1.0j*result_i)
 
     def finalResult(self):
         time = 2*np.pi/self.EField.repetition_freq-self.EField.cutoff
@@ -135,8 +140,6 @@ if __name__ == '__main__':
     markov.prepareT()
     markov.prepareD()    
     markov.zeroOrder()
-    markov.integrate(0,0)
-    #markov.addOrder()
-    #markov.finalResult()
+    markov.addOrder()
 
 
