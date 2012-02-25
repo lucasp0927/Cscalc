@@ -48,11 +48,13 @@ class Markov(object):
         return idx
 
     def rotate_omega(self,i,j):
+        if j<i:
+            print "error"
         if i in self.group[0]:
-            if j not in self.group[0]:
-                return self.omega[i]-self.omega[j]-self.EField.carrier_freq
+            if j in self.group[0]:
+                return self.omega[i]-self.omega[j]                
             else:
-                return self.omega[i]-self.omega[j]
+                return self.omega[i]-self.omega[j]-self.EField.carrier_freq
         else:
             return self.omega[i]-self.omega[j]
 
@@ -64,6 +66,9 @@ class Markov(object):
                     self.T[self.ij2idx(j,i)][self.ij2idx(k[1],k[0])]+=k[2]
         for i in range(self.n):
              for j in range(i+1,self.n):
+                 if self.rotate_omega(i,j) > 1e11:
+                     print i,j
+                     print "error"
                  self.T[self.ij2idx(i,j)][self.ij2idx(i,j)]+= -1.0j*self.rotate_omega(i,j)
                  self.T[self.ij2idx(j,i)][self.ij2idx(j,i)]+= 1.0j*self.rotate_omega(i,j)
 
@@ -81,15 +86,15 @@ class Markov(object):
             self.Dfunction[:,:,i[0]]=linalg.expm(markov.T*i[1])
 
     def addOrder(self):
-        for i in range(int(self.N)):
+        for i in range(self.N):
             print i
             t1 = time.time()                
-            for j in range(int(self.N)):
+            for j in range(self.N):
                 self.calcDFunction(i,j)
             t2 = time.time()
             print 'took %0.3f ms' % ((t2-t1)*1000.0)
         self.order += 1            
-        self.Dfunction = self.DfunctionTemp
+        self.Dfunction = self.DfunctionTemp # copy problem?
 
     def calcSlope(self,I,J,i):
         ans =  np.sum((self.T[I][:]+self.EField.envelope(self.tsample[i])*self.D[I][:])*self.Dfunction[:,J,i])
@@ -111,10 +116,10 @@ class Markov(object):
             init = 1
         else:
             init = 0
-        # slopfunc = np.vectorize(self.calcSlope)
-        # slope = slopfunc(I,J,np.arange(self.smpnum))
+        slopfunc = np.vectorize(self.calcSlope)
+        slope = slopfunc(I,J,np.arange(self.smpnum))
 
-        slope = np.sum((np.outer(self.T[I][:],np.ones(self.smpnum,complex))+np.outer(self.D[I][:],self.EField.envelope(self.tsample)))*self.Dfunction[:,J,:],axis=0) # 75% faster
+        # slope = np.sum((np.outer(self.T[I][:],np.ones(self.smpnum,complex))+np.outer(self.D[I][:],self.EField.envelope(self.tsample)))*self.Dfunction[:,J,:],axis=0) # 75% faster
 
         # interpolate slope
         slope_r = np.real(slope)
@@ -126,8 +131,8 @@ class Markov(object):
         result_r = integrate.odeint(self.slp,init,self.tsample,args=(slope_r_int,self.tsample,slope_r))
         result_i = integrate.odeint(self.slp,init,self.tsample,args=(slope_i_int,self.tsample,slope_i))
         self.DfunctionTemp[I,J,:] = np.transpose(result_r + 1.0j*result_i)
-        # plt.plot(self.tsample,result_r)
-        # plt.show()
+        plt.plot(self.tsample,result_r,self.tsample,result_i)
+        plt.show()
         
     def finalResult(self):
         time = 2*np.pi/self.EField.repetition_freq-self.EField.cutoff
@@ -143,7 +148,7 @@ class Markov(object):
             for j in range(3):           # make this more elegent
                 for k in self.group[j]:
                     data[j][i] += state[self.ij2idx(k,k)]
-
+        plt.ylim(-2,2)
         plt.plot(self.tsample,data[0],self.tsample,data[1],self.tsample,data[2])
         plt.show()
 

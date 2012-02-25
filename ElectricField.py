@@ -20,7 +20,8 @@ class ElectricField(object):
         the envelope function must start from t = 0
         """
         sigma = 20e-15
-        maxima = 1e6
+        #maxima = 1e6
+        maxima = 0.0
         return maxima*np.exp(-(t-sigma*5)**2/(2*sigma**2))
 
     def plotSpectrum(self,y,Ts):
