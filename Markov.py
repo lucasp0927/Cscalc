@@ -4,7 +4,7 @@ import sys
 from ElectricField import ElectricField
 import numpy as np
 from scipy import linalg,integrate
-from scipy.interpolate import interp1d
+from scipy.interpolate import interp1d,UnivariateSpline
 import matplotlib.pyplot as plt
 
 HBAR =  1.05457148e-34
@@ -86,10 +86,13 @@ class Markov(object):
 
     def addOrder(self):
         for i in range(int(self.N)):
-            for j in range(i,int(self.N)):
+            for j in range(int(self.N)):
                 print i,j
                 self.calcDFunction(i,j)
-
+        # def calcrow(i):
+        #     for j in range(int(self.N)):
+        #         self.calcDFunction(i,j)
+        # foreach(calcrow,range(int(self.N)))
         self.order += 1            
         self.Dfunction = self.DfunctionTemp
         
@@ -143,7 +146,7 @@ class Markov(object):
 
         plt.plot(self.tsample,data[0],self.tsample,data[1],self.tsample,data[2])
         plt.show()
-    
+
 if __name__ == '__main__':
     markov = Markov()
     markov.prepareT()
