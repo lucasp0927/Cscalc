@@ -89,19 +89,29 @@ class Markov(object):
         for i in range(int(self.N)):
             for j in range(i,int(self.N)):
                 print i,j
-                self.integrate(i,j)
+                self.calcDFunction(i,j)
 
         self.order += 1            
         self.Dfunction = self.DfunctionTemp
         
     def calcSlope(self,I,J,i):
-        ans = 0.0 + 0.0j
-        for k in range(self.N):
-            ans += (self.T[I][k]+self.EField.envelope(self.tsample[i])*self.D[I][k])*self.Dfunction[k,J,i]
-            #ans += self.EField.envelope(self.tsample[i])
+        #ans = 0.0 + 0.0j
+        # for k in range(self.N):
+        #     ans += (self.T[I][k]+self.EField.envelope(self.tsample[i])*self.D[I][k])*self.Dfunction[k,J,i]
+        ans =  np.sum((self.T[I][:]+self.EField.envelope(self.tsample[i])*self.D[I][:])*self.Dfunction[:,J,i])
         return ans
 
-    def integrate(self,I,J):
+    def slp(self,x,t,interpolater):
+        xs = interpolater.x
+        ys = interpolater.y
+        if t < xs[0]:
+            return ys[0]+(t-xs[0])*(ys[1]-ys[0])/(xs[1]-xs[0])
+        elif t > xs[-1]:
+            return ys[-1]+(t-xs[-1])*(ys[-1]-ys[-2])/(xs[-1]-xs[-2])
+        else:
+            return interpolater(t)
+        
+    def calcDFunction(self,I,J):
         if I==J:
             init = 1
         else:
@@ -110,6 +120,7 @@ class Markov(object):
         # for i in range(self.smpnum):
         #     for k in range(self.N):
         #         slope[i] += (self.T[I][k]+self.EField.envelope(self.tsample[i])*self.D[I][k])*self.Dfunction[k,J,i]
+        print "calc slope"
         slopfunc = np.vectorize(self.calcSlope)
         slope = slopfunc(I,J,np.arange(self.smpnum))
         # interpolate slope
@@ -117,18 +128,19 @@ class Markov(object):
         slope_i = np.imag(slope)
         slope_r_int = interp1d(self.tsample,slope_r,kind='cubic')
         slope_i_int = interp1d(self.tsample,slope_i,kind='cubic') # spline representation
-        def slp(x,t,interpolater):
-            xs = interpolater.x
-            ys = interpolater.y
-            if t < xs[0]:
-                return ys[0]+(t-xs[0])*(ys[1]-ys[0])/(xs[1]-xs[0])
-            elif t > xs[-1]:
-                return ys[-1]+(t-xs[-1])*(ys[-1]-ys[-2])/(xs[-1]-xs[-2])
-            else:
-                return interpolater(t)
+        # def slp(x,t,interpolater):
+        #     xs = interpolater.x
+        #     ys = interpolater.y
+        #     if t < xs[0]:
+        #         return ys[0]+(t-xs[0])*(ys[1]-ys[0])/(xs[1]-xs[0])
+        #     elif t > xs[-1]:
+        #         return ys[-1]+(t-xs[-1])*(ys[-1]-ys[-2])/(xs[-1]-xs[-2])
+        #     else:
+        #         return interpolater(t)
             #return 0
-        result_r = integrate.odeint(slp,init,self.tsample,args=(slope_r_int,))
-        result_i = integrate.odeint(slp,init,self.tsample,args=(slope_i_int,))
+        print "odeint"
+        result_r = integrate.odeint(self.slp,init,self.tsample,args=(slope_r_int,))
+        result_i = integrate.odeint(self.slp,init,self.tsample,args=(slope_i_int,))
         self.DfunctionTemp[I,J,:] = np.transpose(result_r + 1.0j*result_i)
 
     def finalResult(self):
