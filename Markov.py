@@ -6,6 +6,7 @@ import numpy as np
 from scipy import linalg,integrate
 from scipy.interpolate import interp1d,UnivariateSpline
 import matplotlib.pyplot as plt
+import time
 
 HBAR =  1.05457148e-34
 class Markov(object):
@@ -82,13 +83,17 @@ class Markov(object):
     def addOrder(self):
         for i in range(int(self.N)):
             print i
+            t1 = time.time()                
             for j in range(int(self.N)):
                 self.calcDFunction(i,j)
+            t2 = time.time()
+            print 'took %0.3f ms' % ((t2-t1)*1000.0)
         self.order += 1            
         self.Dfunction = self.DfunctionTemp
 
     def calcSlope(self,I,J,i):
         ans =  np.sum((self.T[I][:]+self.EField.envelope(self.tsample[i])*self.D[I][:])*self.Dfunction[:,J,i])
+        #ans1 = np.sum((np.outer(self.T[I][:],np.ones(self.smpnum,complex))+np.outer(self.D[I][:],self.EField.envelope(self.tsample)))*self.Dfunction[:,J,:],axis=0)
         return ans
 
     def slp(self,x,t,interpolater,xs,ys):
@@ -106,15 +111,17 @@ class Markov(object):
             init = 1
         else:
             init = 0
-        slopfunc = np.vectorize(self.calcSlope)
-        slope = slopfunc(I,J,np.arange(self.smpnum))
+        # slopfunc = np.vectorize(self.calcSlope)
+        # slope = slopfunc(I,J,np.arange(self.smpnum))
+
+        slope = np.sum((np.outer(self.T[I][:],np.ones(self.smpnum,complex))+np.outer(self.D[I][:],self.EField.envelope(self.tsample)))*self.Dfunction[:,J,:],axis=0) # 75% faster
 
         # interpolate slope
         slope_r = np.real(slope)
         slope_i = np.imag(slope)
-        # slope_r_int = interp1d(self.tsample,slope_r,kind='cubic') # scipy.interpolate.UnivariateSpline use this instead
+        # slope_r_int = interp1d(self.tsample,slope_r,kind='cubic') 
         # slope_i_int = interp1d(self.tsample,slope_i,kind='cubic') # spline representation
-        slope_r_int = UnivariateSpline(self.tsample,slope_r)
+        slope_r_int = UnivariateSpline(self.tsample,slope_r) # much faster than interp1d
         slope_i_int = UnivariateSpline(self.tsample,slope_i)
         result_r = integrate.odeint(self.slp,init,self.tsample,args=(slope_r_int,self.tsample,slope_r))
         result_i = integrate.odeint(self.slp,init,self.tsample,args=(slope_i_int,self.tsample,slope_i))
