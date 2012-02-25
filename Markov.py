@@ -103,9 +103,9 @@ class Markov(object):
         ans =  np.sum((self.T[I][:]+self.EField.envelope(self.tsample[i])*self.D[I][:])*self.Dfunction[:,J,i])
         return ans
 
-    def slp(self,x,t,interpolater):
-        xs = interpolater.x
-        ys = interpolater.y
+    def slp(self,x,t,interpolater,xs,ys):
+        # xs = interpolater.x
+        # ys = interpolater.y
         if t < xs[0]:
             return ys[0]+(t-xs[0])*(ys[1]-ys[0])/(xs[1]-xs[0])
         elif t > xs[-1]:
@@ -118,17 +118,24 @@ class Markov(object):
             init = 1
         else:
             init = 0
+        print "slope"
         slopfunc = np.vectorize(self.calcSlope)
         slope = slopfunc(I,J,np.arange(self.smpnum))
+
         # interpolate slope
         slope_r = np.real(slope)
         slope_i = np.imag(slope)
-        slope_r_int = interp1d(self.tsample,slope_r,kind='cubic')
-        slope_i_int = interp1d(self.tsample,slope_i,kind='cubic') # spline representation
-        result_r = integrate.odeint(self.slp,init,self.tsample,args=(slope_r_int,))
-        result_i = integrate.odeint(self.slp,init,self.tsample,args=(slope_i_int,))
+        # slope_r_int = interp1d(self.tsample,slope_r,kind='cubic') # scipy.interpolate.UnivariateSpline use this instead
+        # slope_i_int = interp1d(self.tsample,slope_i,kind='cubic') # spline representation
+        slope_r_int = UnivariateSpline(self.tsample,slope_r)
+        slope_i_int = UnivariateSpline(self.tsample,slope_i)
+        print "ode"
+        result_r = integrate.odeint(self.slp,init,self.tsample,args=(slope_r_int,self.tsample,slope_r))
+        result_i = integrate.odeint(self.slp,init,self.tsample,args=(slope_i_int,self.tsample,slope_i))
         self.DfunctionTemp[I,J,:] = np.transpose(result_r + 1.0j*result_i)
-
+        # plt.plot(self.tsample,result_r)
+        # plt.show()
+        
     def finalResult(self):
         time = 2*np.pi/self.EField.repetition_freq-self.EField.cutoff
         self.final = np.dot(self.Dfunction[:,:,-1],linalg.expm(self.T*time)) # check this
@@ -152,6 +159,7 @@ if __name__ == '__main__':
     markov.prepareT()
     markov.prepareD()    
     markov.zeroOrder()
+    #markov.calcDFunction(0,0)
     markov.addOrder()
     markov.plotGraph()
     #    markov.addOrder()
