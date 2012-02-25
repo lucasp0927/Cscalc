@@ -116,10 +116,10 @@ class Markov(object):
             init = 1
         else:
             init = 0
-        slopfunc = np.vectorize(self.calcSlope)
-        slope = slopfunc(I,J,np.arange(self.smpnum))
+        # slopfunc = np.vectorize(self.calcSlope)
+        # slope = slopfunc(I,J,np.arange(self.smpnum))
 
-        # slope = np.sum((np.outer(self.T[I][:],np.ones(self.smpnum,complex))+np.outer(self.D[I][:],self.EField.envelope(self.tsample)))*self.Dfunction[:,J,:],axis=0) # 75% faster
+        slope = np.sum((np.outer(self.T[I][:],np.ones(self.smpnum,complex))+np.outer(self.D[I][:],self.EField.envelope(self.tsample)))*self.Dfunction[:,J,:],axis=0) # 75% faster
 
         # interpolate slope
         slope_r = np.real(slope)
@@ -131,8 +131,8 @@ class Markov(object):
         result_r = integrate.odeint(self.slp,init,self.tsample,args=(slope_r_int,self.tsample,slope_r))
         result_i = integrate.odeint(self.slp,init,self.tsample,args=(slope_i_int,self.tsample,slope_i))
         self.DfunctionTemp[I,J,:] = np.transpose(result_r + 1.0j*result_i)
-        plt.plot(self.tsample,result_r,self.tsample,result_i)
-        plt.show()
+        # plt.plot(self.tsample,result_r,self.tsample,result_i)
+        # plt.show()
         
     def finalResult(self):
         time = 2*np.pi/self.EField.repetition_freq-self.EField.cutoff
@@ -140,14 +140,14 @@ class Markov(object):
 
     def plotGraph(self):
         state = np.zeros(self.N,complex)
-        for i in self.group[0]:
+        for i in self.group[1]:
             state[self.ij2idx(i,i)] = 1.0/len(self.group[0])
         data = np.zeros((3,self.smpnum))
         for i in range(self.smpnum):
-            state = np.dot(self.Dfunction[:,:,i],state)
+            state1 = np.dot(self.Dfunction[:,:,i],state)
             for j in range(3):           # make this more elegent
                 for k in self.group[j]:
-                    data[j][i] += state[self.ij2idx(k,k)]
+                    data[j][i] += state1[self.ij2idx(k,k)]
         plt.ylim(-2,2)
         plt.plot(self.tsample,data[0],self.tsample,data[1],self.tsample,data[2])
         plt.show()
@@ -159,6 +159,10 @@ if __name__ == '__main__':
     markov.zeroOrder()
     #markov.calcDFunction(0,0)
     markov.addOrder()
+    markov.addOrder()
+    markov.addOrder()
+    markov.addOrder()
+    markov.addOrder()        
     markov.plotGraph()
     #    markov.addOrder()
 

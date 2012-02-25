@@ -1,3 +1,4 @@
+#!/usr/bin/python2
 import numpy as np
 #import matplotlib.pyplot as plt
 from pylab import plot, show, title, xlabel, ylabel, subplot
@@ -20,8 +21,7 @@ class ElectricField(object):
         the envelope function must start from t = 0
         """
         sigma = 20e-15
-        #maxima = 1e6
-        maxima = 0.0
+        maxima = 1e6
         return maxima*np.exp(-(t-sigma*5)**2/(2*sigma**2))
 
     def plotSpectrum(self,y,Ts):
