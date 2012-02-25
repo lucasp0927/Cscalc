@@ -21,11 +21,9 @@ class Markov(object):
         self.omega = self.parameter['omega']
         self.group = self.parameter['level_group']
         self.dipole = self.parameter['dipole'][0]
-
         self.n = self.parameter['n']# number of levels
         self.N = self.n**2 # the number of independent terms in  density matrix
         self.decoherence = self.parameter['decoherence_matrix']
-
         self.T = np.zeros((self.N,self.N),complex) # time independent part d rho/ dt = T rho
         self.D = np.zeros((self.N,self.N),complex) # time independent part d rho/ dt = T rho
         self.final = np.zeros((self.N,self.N),complex) # final markov matrix
@@ -33,7 +31,6 @@ class Markov(object):
         self.smpnum = self.EField.sample
         self.cutoff = self.EField.cutoff
         self.tsample = np.linspace(0,self.EField.cutoff,self.smpnum)
-        #self.Dfunction = [np.zeros((self.N,self.N),complex) for i in range(self.EField.sample)] # time dependent part
         self.Dfunction = np.empty((self.N,self.N,self.smpnum),complex)
         self.DfunctionTemp = np.empty((self.N,self.N,self.smpnum),complex)
         self.order = 0
@@ -84,20 +81,13 @@ class Markov(object):
 
     def addOrder(self):
         for i in range(int(self.N)):
+            print i
             for j in range(int(self.N)):
-                print i,j
                 self.calcDFunction(i,j)
-        # def calcrow(i):
-        #     for j in range(int(self.N)):
-        #         self.calcDFunction(i,j)
-        # foreach(calcrow,range(int(self.N)))
         self.order += 1            
         self.Dfunction = self.DfunctionTemp
 
     def calcSlope(self,I,J,i):
-        #ans = 0.0 + 0.0j
-        # for k in range(self.N):
-        #     ans += (self.T[I][k]+self.EField.envelope(self.tsample[i])*self.D[I][k])*self.Dfunction[k,J,i]
         ans =  np.sum((self.T[I][:]+self.EField.envelope(self.tsample[i])*self.D[I][:])*self.Dfunction[:,J,i])
         return ans
 
