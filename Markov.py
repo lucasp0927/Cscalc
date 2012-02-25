@@ -4,7 +4,7 @@ import sys
 from ElectricField import ElectricField
 import numpy as np
 from scipy import linalg,integrate
-from scipy.interpolate import interp1d
+from scipy.interpolate import interp1d,UnivariateSpline
 import matplotlib.pyplot as plt
 
 HBAR =  1.05457148e-34
@@ -21,6 +21,7 @@ class Markov(object):
         self.omega = self.parameter['omega']
         self.group = self.parameter['level_group']
         self.dipole = self.parameter['dipole'][0]
+
         self.n = self.parameter['n']# number of levels
         self.N = self.n**2 # the number of independent terms in  density matrix
         self.decoherence = self.parameter['decoherence_matrix']
@@ -28,7 +29,6 @@ class Markov(object):
         self.T = np.zeros((self.N,self.N),complex) # time independent part d rho/ dt = T rho
         self.D = np.zeros((self.N,self.N),complex) # time independent part d rho/ dt = T rho
         self.final = np.zeros((self.N,self.N),complex) # final markov matrix
-
         self.EField = ElectricField()
         self.smpnum = self.EField.sample
         self.cutoff = self.EField.cutoff
@@ -84,51 +84,79 @@ class Markov(object):
 
     def addOrder(self):
         for i in range(int(self.N)):
-            for j in range(i,int(self.N)):
+            for j in range(int(self.N)):
                 print i,j
-                self.integrate(i,j)
-        self.order += 1
+                self.calcDFunction(i,j)
+        # def calcrow(i):
+        #     for j in range(int(self.N)):
+        #         self.calcDFunction(i,j)
+        # foreach(calcrow,range(int(self.N)))
+        self.order += 1            
         self.Dfunction = self.DfunctionTemp
 
     def calcSlope(self,I,J,i):
-        ans = 0.0 + 0.0j
-        for k in range(self.N):
-            ans += (self.T[I][k]+self.EField.envelope(self.tsample[i])*self.D[I][k])*self.Dfunction[k,J,i]
+        #ans = 0.0 + 0.0j
+        # for k in range(self.N):
+        #     ans += (self.T[I][k]+self.EField.envelope(self.tsample[i])*self.D[I][k])*self.Dfunction[k,J,i]
+        ans =  np.sum((self.T[I][:]+self.EField.envelope(self.tsample[i])*self.D[I][:])*self.Dfunction[:,J,i])
         return ans
 
-    def integrate(self,I,J):
+    def slp(self,x,t,interpolater,xs,ys):
+        # xs = interpolater.x
+        # ys = interpolater.y
+        if t < xs[0]:
+            return ys[0]+(t-xs[0])*(ys[1]-ys[0])/(xs[1]-xs[0])
+        elif t > xs[-1]:
+            return ys[-1]+(t-xs[-1])*(ys[-1]-ys[-2])/(xs[-1]-xs[-2])
+        else:
+            return interpolater(t)
+        
+    def calcDFunction(self,I,J):
         if I==J:
             init = 1
         else:
             init = 0
         slopfunc = np.vectorize(self.calcSlope)
         slope = slopfunc(I,J,np.arange(self.smpnum))
+
         # interpolate slope
         slope_r = np.real(slope)
         slope_i = np.imag(slope)
-        slope_r_int = interp1d(self.tsample,slope_r,kind='cubic')
-        slope_i_int = interp1d(self.tsample,slope_i,kind='cubic') # spline representation
-        def slp(x,t,interpolater):
-            xs = interpolater.x
-            ys = interpolater.y
-            if t < xs[0]:
-                return ys[0]+(t-xs[0])*(ys[1]-ys[0])/(xs[1]-xs[0])
-            elif t > xs[-1]:
-                return ys[-1]+(t-xs[-1])*(ys[-1]-ys[-2])/(xs[-1]-xs[-2])
-            else:
-                return interpolater(t)
-        result_r = integrate.odeint(slp,init,self.tsample,args=(slope_r_int,))
-        result_i = integrate.odeint(slp,init,self.tsample,args=(slope_i_int,))
+        # slope_r_int = interp1d(self.tsample,slope_r,kind='cubic') # scipy.interpolate.UnivariateSpline use this instead
+        # slope_i_int = interp1d(self.tsample,slope_i,kind='cubic') # spline representation
+        slope_r_int = UnivariateSpline(self.tsample,slope_r)
+        slope_i_int = UnivariateSpline(self.tsample,slope_i)
+        result_r = integrate.odeint(self.slp,init,self.tsample,args=(slope_r_int,self.tsample,slope_r))
+        result_i = integrate.odeint(self.slp,init,self.tsample,args=(slope_i_int,self.tsample,slope_i))
         self.DfunctionTemp[I,J,:] = np.transpose(result_r + 1.0j*result_i)
-
+        # plt.plot(self.tsample,result_r)
+        # plt.show()
+        
     def finalResult(self):
         time = 2*np.pi/self.EField.repetition_freq-self.EField.cutoff
         self.final = np.dot(self.Dfunction[:,:,-1],linalg.expm(self.T*time)) # check this
+
+    def plotGraph(self):
+        state = np.zeros(self.N,complex)
+        for i in self.group[0]:
+            state[self.ij2idx(i,i)] = 1.0/len(self.group[0])
+        data = np.zeros((3,self.smpnum))
+        for i in range(self.smpnum):
+            state = np.dot(self.Dfunction[:,:,i],state)
+            for j in range(3):           # make this more elegent
+                for k in self.group[j]:
+                    data[j][i] += state[self.ij2idx(k,k)]
+
+        plt.plot(self.tsample,data[0],self.tsample,data[1],self.tsample,data[2])
+        plt.show()
 
 if __name__ == '__main__':
     markov = Markov()
     markov.prepareT()
     markov.prepareD()
     markov.zeroOrder()
+    #markov.calcDFunction(0,0)
     markov.addOrder()
-    markov.finalResult()
+    markov.plotGraph()
+    #    markov.addOrder()
+
