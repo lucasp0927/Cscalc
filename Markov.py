@@ -1,11 +1,16 @@
 #!/usr/bin/python2
 from __future__ import division
+# threading
 import sys
+import threading
+from itertools import izip, count
+
 from ElectricField import ElectricField
 import numpy as np
 from scipy import linalg,integrate
 from scipy.interpolate import interp1d,UnivariateSpline
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 import time
 
 HBAR =  1.05457148e-34
@@ -17,6 +22,7 @@ class Markov(object):
         """
         file_in = sys.argv[1]
         file_out = sys.argv[2]
+        self.pp = PdfPages(file_out)        
         dictf = open(file_in,'r')
         self.parameter = eval(dictf.read())
         self.omega = self.parameter['omega']
@@ -93,8 +99,12 @@ class Markov(object):
                 self.calcDFunction(i,j)
             t2 = time.time()
             print 'took %0.3f ms' % ((t2-t1)*1000.0)
+        # def calcRow(i):
+        #     for j in range(self.N):
+        #           self.calcDFunction(i,j)
+        # foreach(calcRow,range(self.N))
         self.order += 1            
-        self.Dfunction = self.DfunctionTemp # copy problem?
+        self.Dfunction = self.DfunctionTemp.copy()
 
     def calcSlope(self,I,J,i):
         ans =  np.sum((self.T[I][:]+self.EField.envelope(self.tsample[i])*self.D[I][:])*self.Dfunction[:,J,i])
@@ -138,31 +148,101 @@ class Markov(object):
         time = 2*np.pi/self.EField.repetition_freq-self.EField.cutoff
         self.final = np.dot(self.Dfunction[:,:,-1],linalg.expm(self.T*time)) # check this
 
-    def plotGraph(self):
+    def plotGraph(self,title=""):
         state = np.zeros(self.N,complex)
         for i in self.group[1]:
             state[self.ij2idx(i,i)] = 1.0/len(self.group[0])
         data = np.zeros((3,self.smpnum))
         for i in range(self.smpnum):
-            state1 = np.dot(self.Dfunction[:,:,i],state)
+            state1 = np.dot(self.Dfunction[:,:,i],state.T)
             for j in range(3):           # make this more elegent
                 for k in self.group[j]:
                     data[j][i] += state1[self.ij2idx(k,k)]
-        plt.ylim(-2,2)
-        plt.plot(self.tsample,data[0],self.tsample,data[1],self.tsample,data[2])
-        plt.show()
+        plt.figure(1)                    
+        fig = plt.subplot(1,1,1)
+        plt.title(title)
+        plt.ylim(0,1)
+        plt.xlabel('time')
+        plt.ylabel('population')
+        for i in range(3):
+            fig.plot(self.tsample,data[i],label=str(i))
+        handles, labels = fig.get_legend_handles_labels()
+        fig.legend(handles[::-1], labels[::-1])
+        plt.savefig(self.pp,format='pdf')
+        plt.clf()
+        #show()
 
+def foreach(f,l,threads=8,return_=False):
+    """
+    Apply f to each element of l, in parallel
+    """
+
+    if threads>1:
+        iteratorlock = threading.Lock()
+        exceptions = []
+        if return_:
+            n = 0
+            d = {}
+            i = izip(count(),l.__iter__())
+        else:
+            i = l.__iter__()
+
+
+        def runall():
+            while True:
+                iteratorlock.acquire()
+                try:
+                    try:
+                        if exceptions:
+                            return
+                        v = i.next()
+                    finally:
+                        iteratorlock.release()
+                except StopIteration:
+                    return
+                try:
+                    if return_:
+                        n,x = v
+                        d[n] = f(x)
+                    else:
+                        f(v)
+                except:
+                    e = sys.exc_info()
+                    iteratorlock.acquire()
+                    try:
+                        exceptions.append(e)
+                    finally:
+                        iteratorlock.release()
+        
+        threadlist = [threading.Thread(target=runall) for j in xrange(threads)]
+        for t in threadlist:
+            t.start()
+        for t in threadlist:
+            t.join()
+        if exceptions:
+            a, b, c = exceptions[0]
+            raise a, b, c
+        if return_:
+            r = d.items()
+            r.sort()
+            return [v for (n,v) in r]
+    else:
+        if return_:
+            return [f(v) for v in l]
+        else:
+            for v in l:
+                f(v)
+            return
+        
 if __name__ == '__main__':
     markov = Markov()
     markov.prepareT()
     markov.prepareD()
     markov.zeroOrder()
-    #markov.calcDFunction(0,0)
-    markov.addOrder()
-    markov.addOrder()
-    markov.addOrder()
-    markov.addOrder()
-    markov.addOrder()        
-    markov.plotGraph()
-    #    markov.addOrder()
+    # #markov.calcDFunction(0,0)
+    for i in range(6):
+        markov.addOrder()
+        markov.plotGraph(title=str(i)+"th order")
+    markov.pp.close()
+
 
