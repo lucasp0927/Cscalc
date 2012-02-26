@@ -102,7 +102,7 @@ class Markov(object):
             slope_r_int = UnivariateSpline(self.tsample,slope_r) # much faster than interp1d
             slope_i_int = UnivariateSpline(self.tsample,slope_i)
             result_r = integrate.odeint(self.slp,init,self.tsample,args=(slope_r_int,self.tsample,slope_r))
-            result_i = integrate.odeint(self.slp,init,self.tsample,args=(slope_i_int,self.tsample,slope_i))
+            result_i = integrate.odeint(self.slp,0,self.tsample,args=(slope_i_int,self.tsample,slope_i))
             self.DfunctionTemp[I,J,:] = np.transpose(result_r + 1.0j*result_i)
 
         for i in range(self.N):
