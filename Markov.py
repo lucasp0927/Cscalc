@@ -1,10 +1,6 @@
 #!/usr/bin/python2
 from __future__ import division
-# threading
 import sys
-import threading
-from itertools import izip, count
-
 from ElectricField import ElectricField
 import numpy as np
 from scipy import linalg,integrate
@@ -92,24 +88,40 @@ class Markov(object):
             self.Dfunction[:,:,i[0]]=linalg.expm(markov.T*i[1])
 
     def addOrder(self):
+
+        def calcDFunction(I,J):
+            if I==J:
+                init = 1
+            else:
+                init = 0
+            slope = np.sum((np.outer(self.T[I][:],np.ones(self.smpnum,complex))+np.outer(self.D[I][:],self.EField.envelope(self.tsample)))*self.Dfunction[:,J,:],axis=0) # 75% faster
+            slope_r = np.real(slope)
+            slope_i = np.imag(slope)
+            slope_r_int = UnivariateSpline(self.tsample,slope_r) # much faster than interp1d
+            slope_i_int = UnivariateSpline(self.tsample,slope_i)
+            result_r = integrate.odeint(self.slp,init,self.tsample,args=(slope_r_int,self.tsample,slope_r))
+            result_i = integrate.odeint(self.slp,init,self.tsample,args=(slope_i_int,self.tsample,slope_i))
+            self.DfunctionTemp[I,J,:] = np.transpose(result_r + 1.0j*result_i)
+
         for i in range(self.N):
             print i
             t1 = time.time()                
             for j in range(self.N):
-                self.calcDFunction(i,j)
+                calcDFunction(i,j)
             t2 = time.time()
             print 'took %0.3f ms' % ((t2-t1)*1000.0)
+            
         # def calcRow(i):
         #     for j in range(self.N):
-        #           self.calcDFunction(i,j)
+        #         calcDFunction(i,j)
+                
         # foreach(calcRow,range(self.N))
         self.order += 1            
         self.Dfunction = self.DfunctionTemp.copy()
 
-    def calcSlope(self,I,J,i):
-        ans =  np.sum((self.T[I][:]+self.EField.envelope(self.tsample[i])*self.D[I][:])*self.Dfunction[:,J,i])
-        #ans1 = np.sum((np.outer(self.T[I][:],np.ones(self.smpnum,complex))+np.outer(self.D[I][:],self.EField.envelope(self.tsample)))*self.Dfunction[:,J,:],axis=0)
-        return ans
+    # def calcSlope(self,I,J,i):
+    #     ans =  np.sum((self.T[I][:]+self.EField.envelope(self.tsample[i])*self.D[I][:])*self.Dfunction[:,J,i])
+    #     return ans
 
     def slp(self,x,t,interpolater,xs,ys):
         # xs = interpolater.x
@@ -120,29 +132,7 @@ class Markov(object):
             return ys[-1]+(t-xs[-1])*(ys[-1]-ys[-2])/(xs[-1]-xs[-2])
         else:
             return interpolater(t)
-        
-    def calcDFunction(self,I,J):
-        if I==J:
-            init = 1
-        else:
-            init = 0
-        # slopfunc = np.vectorize(self.calcSlope)
-        # slope = slopfunc(I,J,np.arange(self.smpnum))
 
-        slope = np.sum((np.outer(self.T[I][:],np.ones(self.smpnum,complex))+np.outer(self.D[I][:],self.EField.envelope(self.tsample)))*self.Dfunction[:,J,:],axis=0) # 75% faster
-
-        # interpolate slope
-        slope_r = np.real(slope)
-        slope_i = np.imag(slope)
-        # slope_r_int = interp1d(self.tsample,slope_r,kind='cubic') 
-        # slope_i_int = interp1d(self.tsample,slope_i,kind='cubic') # spline representation
-        slope_r_int = UnivariateSpline(self.tsample,slope_r) # much faster than interp1d
-        slope_i_int = UnivariateSpline(self.tsample,slope_i)
-        result_r = integrate.odeint(self.slp,init,self.tsample,args=(slope_r_int,self.tsample,slope_r))
-        result_i = integrate.odeint(self.slp,init,self.tsample,args=(slope_i_int,self.tsample,slope_i))
-        self.DfunctionTemp[I,J,:] = np.transpose(result_r + 1.0j*result_i)
-        # plt.plot(self.tsample,result_r,self.tsample,result_i)
-        # plt.show()
         
     def finalResult(self):
         time = 2*np.pi/self.EField.repetition_freq-self.EField.cutoff
@@ -158,7 +148,7 @@ class Markov(object):
             state1 = np.dot(self.Dfunction[:,:,i],state.T)
             for j in range(3):           # make this more elegent
                 for k in self.group[j]:
-                    data[j][i] += state1[self.ij2idx(k,k)]
+                    data[j][i] += np.real(state1[self.ij2idx(k,k)])
         plt.figure(1)                    
         fig = plt.subplot(1,1,1)
         plt.title(title)
@@ -172,68 +162,6 @@ class Markov(object):
         plt.savefig(self.pp,format='pdf')
         plt.clf()
         #show()
-
-def foreach(f,l,threads=8,return_=False):
-    """
-    Apply f to each element of l, in parallel
-    """
-
-    if threads>1:
-        iteratorlock = threading.Lock()
-        exceptions = []
-        if return_:
-            n = 0
-            d = {}
-            i = izip(count(),l.__iter__())
-        else:
-            i = l.__iter__()
-
-
-        def runall():
-            while True:
-                iteratorlock.acquire()
-                try:
-                    try:
-                        if exceptions:
-                            return
-                        v = i.next()
-                    finally:
-                        iteratorlock.release()
-                except StopIteration:
-                    return
-                try:
-                    if return_:
-                        n,x = v
-                        d[n] = f(x)
-                    else:
-                        f(v)
-                except:
-                    e = sys.exc_info()
-                    iteratorlock.acquire()
-                    try:
-                        exceptions.append(e)
-                    finally:
-                        iteratorlock.release()
-        
-        threadlist = [threading.Thread(target=runall) for j in xrange(threads)]
-        for t in threadlist:
-            t.start()
-        for t in threadlist:
-            t.join()
-        if exceptions:
-            a, b, c = exceptions[0]
-            raise a, b, c
-        if return_:
-            r = d.items()
-            r.sort()
-            return [v for (n,v) in r]
-    else:
-        if return_:
-            return [f(v) for v in l]
-        else:
-            for v in l:
-                f(v)
-            return
         
 if __name__ == '__main__':
     markov = Markov()
@@ -241,9 +169,9 @@ if __name__ == '__main__':
     markov.prepareD()
     markov.zeroOrder()
     # #markov.calcDFunction(0,0)
-    for i in range(2):
+    for i in range(6):
         markov.addOrder()
         markov.plotGraph(title=str(i)+"th order")
     markov.pp.close()
 
-
+    
