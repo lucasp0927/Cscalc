@@ -17,8 +17,8 @@ class Markov(object):
         """
         """
         file_in = sys.argv[1]
-        file_out = sys.argv[2]
-        self.pp = PdfPages(file_out)        
+        self.file_out = sys.argv[2]
+        self.pp = PdfPages(self.file_out+".pdf")        
         dictf = open(file_in,'r')
         self.parameter = eval(dictf.read())
         self.omega = self.parameter['omega']
@@ -65,14 +65,16 @@ class Markov(object):
             for j in range(i,self.n):
                 for k in self.decoherence[i][j]:
                     self.T[self.ij2idx(i,j)][self.ij2idx(k[0],k[1])]+=k[2]
-                    self.T[self.ij2idx(j,i)][self.ij2idx(k[1],k[0])]+=k[2]
+                    if i != j:
+                        self.T[self.ij2idx(j,i)][self.ij2idx(k[1],k[0])]+=k[2]
         for i in range(self.n):
              for j in range(i+1,self.n):
                  if self.rotate_omega(i,j) > 1e11:
                      print i,j
                      print "error"
                  self.T[self.ij2idx(i,j)][self.ij2idx(i,j)]+= -1.0j*self.rotate_omega(i,j)
-                 self.T[self.ij2idx(j,i)][self.ij2idx(j,i)]+= 1.0j*self.rotate_omega(i,j)
+                 if i!= j:
+                     self.T[self.ij2idx(j,i)][self.ij2idx(j,i)]+= 1.0j*self.rotate_omega(i,j)
 
     def prepareD(self):
         for i in range(self.n):
@@ -85,7 +87,7 @@ class Markov(object):
     def zeroOrder(self):
         for i in enumerate(self.tsample):
             print i[0]
-            self.Dfunction[:,:,i[0]]=linalg.expm(markov.T*i[1])
+            self.Dfunction[:,:,i[0]]=linalg.expm(self.T*i[1])
 
     def addOrder(self):
 
@@ -163,15 +165,27 @@ class Markov(object):
         plt.clf()
         #show()
         
+    def write(self):
+        txtf = open(self.file_out+'.txt','w')
+        data={}
+        data['T'] = self.T
+        data['P'] = self.Dfunction[:,:,-1]
+        data['cutoff'] = self.cutoff
+        data['n'] = self.n
+        data['N'] = self.N
+        data['group'] = self.group
+        txtf.write(str(data))
+        txtf.close()
+        
 if __name__ == '__main__':
     markov = Markov()
     markov.prepareT()
     markov.prepareD()
     markov.zeroOrder()
     # #markov.calcDFunction(0,0)
-    for i in range(6):
+    for i in range(5):
         markov.addOrder()
         markov.plotGraph(title=str(i)+"th order")
     markov.pp.close()
-
+    markov.write()
     
