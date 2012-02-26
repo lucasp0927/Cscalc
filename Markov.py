@@ -149,9 +149,10 @@ class Markov(object):
         self.final = np.dot(self.Dfunction[:,:,-1],linalg.expm(self.T*time)) # check this
 
     def plotGraph(self,title=""):
+        start = 1
         state = np.zeros(self.N,complex)
-        for i in self.group[1]:
-            state[self.ij2idx(i,i)] = 1.0/len(self.group[0])
+        for i in self.group[start]:
+            state[self.ij2idx(i,i)] = 1.0/len(self.group[start])
         data = np.zeros((3,self.smpnum))
         for i in range(self.smpnum):
             state1 = np.dot(self.Dfunction[:,:,i],state.T)
@@ -240,7 +241,7 @@ if __name__ == '__main__':
     markov.prepareD()
     markov.zeroOrder()
     # #markov.calcDFunction(0,0)
-    for i in range(6):
+    for i in range(2):
         markov.addOrder()
         markov.plotGraph(title=str(i)+"th order")
     markov.pp.close()
