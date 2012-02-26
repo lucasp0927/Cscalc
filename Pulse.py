@@ -70,4 +70,4 @@ class Pulse(object):
         
 if __name__ == '__main__':
     p = Pulse()
-    p.plot(1e-8,4000)
+    p.plot(1e-8,10000)

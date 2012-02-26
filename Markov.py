@@ -91,35 +91,51 @@ class Markov(object):
 
     def addOrder(self):
 
-        def calcDFunction(I,J):
-            if I==J:
-                init = 1
-            else:
-                init = 0
-            slope = np.sum((np.outer(self.T[I][:],np.ones(self.smpnum,complex))+np.outer(self.D[I][:],self.EField.envelope(self.tsample)))*self.Dfunction[:,J,:],axis=0) # 75% faster
-            slope_r = np.real(slope)
-            slope_i = np.imag(slope)
-            slope_r_int = UnivariateSpline(self.tsample,slope_r) # much faster than interp1d
-            slope_i_int = UnivariateSpline(self.tsample,slope_i)
-            result_r = integrate.odeint(self.slp,init,self.tsample,args=(slope_r_int,self.tsample,slope_r))
-            result_i = integrate.odeint(self.slp,0,self.tsample,args=(slope_i_int,self.tsample,slope_i))
-            self.DfunctionTemp[I,J,:] = np.transpose(result_r + 1.0j*result_i)
+        # def calcDFunction(I,J):
+        #     if I==J:
+        #         init = 1
+        #     else:
+        #         init = 0
+        #     slope = np.sum((np.outer(self.T[I][:],np.ones(self.smpnum,complex))+np.outer(self.D[I][:],self.EField.envelope(self.tsample)))*self.Dfunction[:,J,:],axis=0) # 75% faster
+        #     slope_r = np.real(slope)
+        #     slope_i = np.imag(slope)
+        #     slope_r_int = UnivariateSpline(self.tsample,slope_r) # much faster than interp1d
+        #     slope_i_int = UnivariateSpline(self.tsample,slope_i)
+        #     result_r = integrate.odeint(self.slp,init,self.tsample,args=(slope_r_int,self.tsample,slope_r))
+        #     result_i = integrate.odeint(self.slp,0,self.tsample,args=(slope_i_int,self.tsample,slope_i))
+        #     self.DfunctionTemp[I,J,:] = np.transpose(result_r + 1.0j*result_i)
 
-        for i in range(self.N):
-            print i
-            t1 = time.time()                
-            for j in range(self.N):
-                calcDFunction(i,j)
-            t2 = time.time()
-            print 'took %0.3f ms' % ((t2-t1)*1000.0)
+        # for i in range(self.N):
+        #     print i
+        #     t1 = time.time()                
+        #     for j in range(self.N):
+        #         calcDFunction(i,j)
+        #     t2 = time.time()
+        #     print 'took %0.3f ms' % ((t2-t1)*1000.0)
             
         # def calcRow(i):
         #     for j in range(self.N):
         #         calcDFunction(i,j)
                 
         # foreach(calcRow,range(self.N))
-        self.order += 1            
-        self.Dfunction = self.DfunctionTemp.copy()
+        for i in range(self.smpnum):
+            self.DfunctionTemp[...,i] = np.dot(self.T+self.D*self.EField.envelope(self.tsample[i]),self.Dfunction[...,i])
+            # print self.DfunctionTemp[:][:][i]
+            # self.DfunctionTemp[:][:][i] = self.Dfunction[:][:][i]
+        # for i in range(self.N):
+        #     for j in range(self.N):
+        #         if i==j:
+        #             init = 1.0
+        #         else:
+        #             init = 0.0
+        #         self.Dfunction[i][j][:] = np.hstack(([0],integrate.cumtrapz(np.real(self.DfunctionTemp[i][j][:]),self.tsample)))+1.0j*np.hstack(([0],integrate.cumtrapz(np.imag(self.DfunctionTemp[i][j][:]),self.tsample)))+init # new scipy will have initial kw
+        #        self.Dfunction = np.concatenate((np.zeros((self.N,self.N,1)),integrate.cumtrapz(np.real(self.DfunctionTemp),self.tsample)),axis=-1)+1.0j*np.concatenate((np.zeros((self.N,self.N,1)),integrate.cumtrapz(np.imag(self.DfunctionTemp),self.tsample)),axis=-1)#+np.identity(self.N,complex)[...,np.newaxis]*np.ones(self.smpnum) # new scipy will have initial kw
+        self.Dfunction = np.concatenate((np.zeros((self.N,self.N,1),complex),integrate.cumtrapz(np.real(self.DfunctionTemp),self.tsample)),axis=-1)
+        self.Dfunction += 1.0j*np.concatenate((np.zeros((self.N,self.N,1),complex),integrate.cumtrapz(np.imag(self.DfunctionTemp),self.tsample)),axis=-1)#+np.identity(self.N,complex)[...,np.newaxis]*np.ones(self.smpnum) # new scipy will have initial kw            
+        for i in range(self.N):
+            self.Dfunction[i,i,:] += np.ones(self.smpnum,complex)
+        self.order += 1
+        #self.Dfunction = self.DfunctionTemp.copy()
 
     # def calcSlope(self,I,J,i):
     #     ans =  np.sum((self.T[I][:]+self.EField.envelope(self.tsample[i])*self.D[I][:])*self.Dfunction[:,J,i])
@@ -182,9 +198,12 @@ if __name__ == '__main__':
     markov.prepareT()
     markov.prepareD()
     markov.zeroOrder()
-    # #markov.calcDFunction(0,0)
     for i in range(5):
+        print "order ",i
+        t1 = time.time()                        
         markov.addOrder()
+        t2 = time.time()
+        print 'took %0.3f ms' % ((t2-t1)*1000.0)            
         markov.plotGraph(title=str(i)+"th order")
     markov.pp.close()
     markov.write()
