@@ -34,37 +34,40 @@ class Pulse(object):
         return idx
         
     def plot(self,rep,num):
-        time = rep - self.cutoff
-        expT = linalg.expm(self.T*time)
+        r_t = rep - self.cutoff
+        expT = linalg.expm(self.T*r_t)
         start = 1
         state = zeros(self.N,complex)
+        time_arr = []
+        time = 0.0
         for i in self.group[start]:
             state[self.ij2idx(i,i)] = 1.0/len(self.group[start])
         data = zeros((3,num*2))
-        print state
         for i in range(num):
             state = dot(self.P,state.T)
-            print state
+            time += self.cutoff
+            time_arr.append(time)
             for j in range(3):           # make this more elegent
                 for k in self.group[j]:
                     data[j][2*i] += real(state[self.ij2idx(k,k)])
             state = dot(expT,state.T)
-            print state
+            time += r_t
+            time_arr.append(time)            
             for j in range(3):           # make this more elegent
                 for k in self.group[j]:
                     data[j][2*i+1] += real(state[self.ij2idx(k,k)])                    
         plt.figure(1)                    
         fig = plt.subplot(1,1,1)
         plt.title("test")
-        plt.ylim(-1,2)
+        plt.ylim(0,1)
         plt.xlabel('time')
         plt.ylabel('population')
         for i in range(3):
-            fig.plot(arange(num*2),data[i],label=str(i))
+            fig.plot(time_arr,data[i],label=str(i))
         handles, labels = fig.get_legend_handles_labels()
         fig.legend(handles[::-1], labels[::-1])
         plt.show()
         
 if __name__ == '__main__':
     p = Pulse()
-    p.plot(1e-8,10)
+    p.plot(1e-8,4000)
