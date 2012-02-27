@@ -35,7 +35,7 @@ class Pulse(object):
         idx = self.n*i+j
         return idx
         
-    def plot(self,rep,num):
+    def time_plot(self,rep,num):
         r_t = rep - self.cutoff
         expT = linalg.expm(self.T*r_t)
         start = 1
@@ -53,6 +53,7 @@ class Pulse(object):
                 for k in self.group[j]:
                     data[j][2*i] += real(state[self.ij2idx(k,k)])
             state = dot(expT,state.T)
+            print state
             time += r_t
             time_arr.append(time)            
             for j in range(3):           # make this more elegent
@@ -70,6 +71,26 @@ class Pulse(object):
         fig.legend(handles[::-1], labels[::-1])
         plt.show()
         
+    def correct(self,arr):
+        # TODO: write in better numpy way
+        for i in range(self.n):
+            if (real(arr[self.ij2idx(i,i)])<0.0 or real(arr[self.ij2idx(i,i)])>1.0):
+                return False
+        else:
+            return True
+
+    def freq_plot(self,start,end,number):
+        rept = linspace(start,end,number)
+        for t in rept:
+            M = dot(self.P,linalg.expm(self.T*(t-self.cutoff)))
+            print linalg.eig(M)
 if __name__ == '__main__':
     p = Pulse()
-    p.plot(1e-8,10000)
+    p.time_plot(1e-8,5000)
+    M = dot(linalg.expm(p.T*(1e-8-p.cutoff)),p.P)
+    W,V = linalg.eig(M)
+    for v in V.T:
+        if p.correct(v):
+            print v
+    
+    #p.freq_plot(1e-7,2e-7,2)

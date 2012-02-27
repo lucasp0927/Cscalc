@@ -144,6 +144,10 @@ class Markov(object):
         #txtf.close()
         pickle.dump( data, open( self.file_out+".p", "wb" ) )
         
+    def tidy(self):
+        # remove imag part in diagnopart
+        pass
+    
 if __name__ == '__main__':
     markov = Markov()
     markov.prepareT()
