@@ -5,6 +5,7 @@ from numpy import *
 from scipy import linalg
 from ElectricField import ElectricField
 import matplotlib.pyplot as plt
+import pickle
 
 class Pulse(object):
     """
@@ -14,8 +15,9 @@ class Pulse(object):
         """
         """
         file_in = sys.argv[1]        
-        dictf = open(file_in,'r')
-        self.parameter = eval(dictf.read())
+        #        dictf = open(file_in,'r')
+        self.parameter = pickle.load( open( file_in, "rb" ) )
+         #self.parameter = eval(dictf.read())
         self.T = self.parameter['T']
         self.P = self.parameter['P']
         self.n = self.parameter['n']

@@ -4,10 +4,11 @@ import sys,gc
 from ElectricField import ElectricField
 import numpy as np
 from scipy import linalg,integrate
-from scipy.interpolate import interp1d,UnivariateSpline
+#from scipy.interpolate import interp1d,UnivariateSpline
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import time
+import pickle
 
 HBAR =  1.05457148e-34
 class Markov(object):
@@ -84,7 +85,6 @@ class Markov(object):
                     self.D[self.ij2idx(i,j)][self.ij2idx(k,j)] += -1.0j*(self.dipole[i][k] )/ HBAR
                     self.D[self.ij2idx(i,j)][self.ij2idx(i,k)] -= -1.0j*(self.dipole[k][j] )/ HBAR
 
-
     def zeroOrder(self):
         for i in enumerate(self.tsample):
             print i[0]
@@ -101,7 +101,6 @@ class Markov(object):
         self.Dfunction = integrate.cumtrapz(self.DfunctionTemp,self.tsample)
         self.DfunctionTemp = []
         gc.collect()        
-        # self.Dfunction += 1.0j*integrate.cumtrapz(np.imag(self.DfunctionTemp),self.tsample)
         self.Dfunction = np.concatenate((np.zeros((self.N,self.N,1),complex),self.Dfunction),axis=-1)
         for i in range(self.N):
             self.Dfunction[i,i,:] += np.ones(self.smpnum,complex)
@@ -133,7 +132,7 @@ class Markov(object):
         #show()
         
     def write(self):
-        txtf = open(self.file_out+'.txt','w')
+        #        txtf = open(self.file_out+'.txt','w')
         data={}
         data['T'] = self.T
         data['P'] = self.Dfunction[:,:,-1]
@@ -141,8 +140,9 @@ class Markov(object):
         data['n'] = self.n
         data['N'] = self.N
         data['group'] = self.group
-        txtf.write(str(data))
-        txtf.close()
+        #txtf.write(str(data))
+        #txtf.close()
+        pickle.dump( data, open( self.file_out+".p", "wb" ) )
         
 if __name__ == '__main__':
     markov = Markov()
