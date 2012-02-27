@@ -53,7 +53,7 @@ class Pulse(object):
                 for k in self.group[j]:
                     data[j][2*i] += real(state[self.ij2idx(k,k)])
             state = dot(expT,state.T)
-            print state
+            #print state
             time += r_t
             time_arr.append(time)            
             for j in range(3):           # make this more elegent
@@ -86,7 +86,7 @@ class Pulse(object):
             print linalg.eig(M)
 if __name__ == '__main__':
     p = Pulse()
-    p.time_plot(1e-8,5000)
+    p.time_plot(1.7313e-11,50000)
     M = dot(linalg.expm(p.T*(1e-8-p.cutoff)),p.P)
     W,V = linalg.eig(M)
     for v in V.T:
