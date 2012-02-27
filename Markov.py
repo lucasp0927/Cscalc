@@ -45,7 +45,6 @@ class Markov(object):
         3 4 5
         6 7 8
         """
-        #idx = (i*(2*self.n-i+1))/2+(j-i)
         idx = self.n*i+j
         return idx
 
@@ -92,34 +91,6 @@ class Markov(object):
             self.Dfunction[:,:,i[0]]=linalg.expm(self.T*i[1])
 
     def addOrder(self):
-
-        # def calcDFunction(I,J):
-        #     if I==J:
-        #         init = 1
-        #     else:
-        #         init = 0
-        #     slope = np.sum((np.outer(self.T[I][:],np.ones(self.smpnum,complex))+np.outer(self.D[I][:],self.EField.envelope(self.tsample)))*self.Dfunction[:,J,:],axis=0) # 75% faster
-        #     slope_r = np.real(slope)
-        #     slope_i = np.imag(slope)
-        #     slope_r_int = UnivariateSpline(self.tsample,slope_r) # much faster than interp1d
-        #     slope_i_int = UnivariateSpline(self.tsample,slope_i)
-        #     result_r = integrate.odeint(self.slp,init,self.tsample,args=(slope_r_int,self.tsample,slope_r))
-        #     result_i = integrate.odeint(self.slp,0,self.tsample,args=(slope_i_int,self.tsample,slope_i))
-        #     self.DfunctionTemp[I,J,:] = np.transpose(result_r + 1.0j*result_i)
-
-        # for i in range(self.N):
-        #     print i
-        #     t1 = time.time()                
-        #     for j in range(self.N):
-        #         calcDFunction(i,j)
-        #     t2 = time.time()
-        #     print 'took %0.3f ms' % ((t2-t1)*1000.0)
-            
-        # def calcRow(i):
-        #     for j in range(self.N):
-        #         calcDFunction(i,j)
-                
-        # foreach(calcRow,range(self.N))
         self.DfunctionTemp = np.empty((self.N,self.N,self.smpnum),complex)        
         for i in range(self.smpnum):
             self.DfunctionTemp[...,i] = np.dot(self.T+self.D*self.EField.envelope(self.tsample[i]),self.Dfunction[...,i])
@@ -127,19 +98,6 @@ class Markov(object):
         self.T = []
         self.D = []
         gc.collect()        
-            # print self.DfunctionTemp[:][:][i]
-            # self.DfunctionTemp[:][:][i] = self.Dfunction[:][:][i]
-        # for i in range(self.N):
-        #     for j in range(self.N):
-        #         if i==j:
-        #             init = 1.0
-        #         else:
-        #             init = 0.0
-        #         self.Dfunction[i][j][:] = np.hstack(([0],integrate.cumtrapz(np.real(self.DfunctionTemp[i][j][:]),self.tsample)))+1.0j*np.hstack(([0],integrate.cumtrapz(np.imag(self.DfunctionTemp[i][j][:]),self.tsample)))+init # new scipy will have initial kw
-        #        self.Dfunction = np.concatenate((np.zeros((self.N,self.N,1)),integrate.cumtrapz(np.real(self.DfunctionTemp),self.tsample)),axis=-1)+1.0j*np.concatenate((np.zeros((self.N,self.N,1)),integrate.cumtrapz(np.imag(self.DfunctionTemp),self.tsample)),axis=-1)#+np.identity(self.N,complex)[...,np.newaxis]*np.ones(self.smpnum) # new scipy will have initial kw
-        
-        # self.Dfunction = np.concatenate((np.zeros((self.N,self.N,1),complex),integrate.cumtrapz(np.real(self.DfunctionTemp),self.tsample)),axis=-1)
-        # self.Dfunction += 1.0j*np.concatenate((np.zeros((self.N,self.N,1),complex),integrate.cumtrapz(np.imag(self.DfunctionTemp),self.tsample)),axis=-1)
         self.Dfunction = integrate.cumtrapz(self.DfunctionTemp,self.tsample)
         self.DfunctionTemp = []
         gc.collect()        
@@ -148,27 +106,7 @@ class Markov(object):
         for i in range(self.N):
             self.Dfunction[i,i,:] += np.ones(self.smpnum,complex)
         self.order += 1
-        #self.Dfunction = self.DfunctionTemp.copy()
-
-    # def calcSlope(self,I,J,i):
-    #     ans =  np.sum((self.T[I][:]+self.EField.envelope(self.tsample[i])*self.D[I][:])*self.Dfunction[:,J,i])
-    #     return ans
-
-    def slp(self,x,t,interpolater,xs,ys):
-        # xs = interpolater.x
-        # ys = interpolater.y
-        if t < xs[0]:
-            return ys[0]+(t-xs[0])*(ys[1]-ys[0])/(xs[1]-xs[0])
-        elif t > xs[-1]:
-            return ys[-1]+(t-xs[-1])*(ys[-1]-ys[-2])/(xs[-1]-xs[-2])
-        else:
-            return interpolater(t)
-
         
-    def finalResult(self):
-        time = 2*np.pi/self.EField.repetition_freq-self.EField.cutoff
-        self.final = np.dot(self.Dfunction[:,:,-1],linalg.expm(self.T*time)) # check this
-
     def plotGraph(self,title=""):
         start = 1
         state = np.zeros(self.N,complex)
