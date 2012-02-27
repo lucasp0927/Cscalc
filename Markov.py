@@ -1,6 +1,6 @@
 #!/usr/bin/python2
 from __future__ import division
-import sys
+import sys,gc
 from ElectricField import ElectricField
 import numpy as np
 from scipy import linalg,integrate
@@ -27,15 +27,15 @@ class Markov(object):
         self.n = self.parameter['n']# number of levels
         self.N = self.n**2 # the number of independent terms in  density matrix
         self.decoherence = self.parameter['decoherence_matrix']
-        self.T = np.zeros((self.N,self.N),complex) # time independent part d rho/ dt = T rho
-        self.D = np.zeros((self.N,self.N),complex) # time independent part d rho/ dt = T rho
+        self.T = [] # time independent part d rho/ dt = T rho
+        self.D = [] # time independent part d rho/ dt = T rho
         self.final = np.zeros((self.N,self.N),complex) # final markov matrix
         self.EField = ElectricField()
         self.smpnum = self.EField.sample
         self.cutoff = self.EField.cutoff
         self.tsample = np.linspace(0,self.EField.cutoff,self.smpnum)
         self.Dfunction = np.empty((self.N,self.N,self.smpnum),complex)
-        self.DfunctionTemp = np.empty((self.N,self.N,self.smpnum),complex)
+        self.DfunctionTemp =[] #np.empty((self.N,self.N,self.smpnum),complex)
         self.order = 0
         dictf.close()
 
@@ -61,6 +61,7 @@ class Markov(object):
             return self.omega[i]-self.omega[j]
 
     def prepareT(self):
+        self.T = np.zeros((self.N,self.N),complex) # time independent part d rho/ dt = T rho        
         for i in range(self.n):
             for j in range(i,self.n):
                 for k in self.decoherence[i][j]:
@@ -77,6 +78,7 @@ class Markov(object):
                      self.T[self.ij2idx(j,i)][self.ij2idx(j,i)]+= 1.0j*self.rotate_omega(i,j)
 
     def prepareD(self):
+        self.D = np.zeros((self.N,self.N),complex) # time independent part d rho/ dt = T rho        
         for i in range(self.n):
             for j in range(self.n):
                 for k in range(self.n):
@@ -118,8 +120,13 @@ class Markov(object):
         #         calcDFunction(i,j)
                 
         # foreach(calcRow,range(self.N))
+        self.DfunctionTemp = np.empty((self.N,self.N,self.smpnum),complex)        
         for i in range(self.smpnum):
             self.DfunctionTemp[...,i] = np.dot(self.T+self.D*self.EField.envelope(self.tsample[i]),self.Dfunction[...,i])
+        self.Dfunction = []
+        self.T = []
+        self.D = []
+        gc.collect()        
             # print self.DfunctionTemp[:][:][i]
             # self.DfunctionTemp[:][:][i] = self.Dfunction[:][:][i]
         # for i in range(self.N):
@@ -130,8 +137,14 @@ class Markov(object):
         #             init = 0.0
         #         self.Dfunction[i][j][:] = np.hstack(([0],integrate.cumtrapz(np.real(self.DfunctionTemp[i][j][:]),self.tsample)))+1.0j*np.hstack(([0],integrate.cumtrapz(np.imag(self.DfunctionTemp[i][j][:]),self.tsample)))+init # new scipy will have initial kw
         #        self.Dfunction = np.concatenate((np.zeros((self.N,self.N,1)),integrate.cumtrapz(np.real(self.DfunctionTemp),self.tsample)),axis=-1)+1.0j*np.concatenate((np.zeros((self.N,self.N,1)),integrate.cumtrapz(np.imag(self.DfunctionTemp),self.tsample)),axis=-1)#+np.identity(self.N,complex)[...,np.newaxis]*np.ones(self.smpnum) # new scipy will have initial kw
-        self.Dfunction = np.concatenate((np.zeros((self.N,self.N,1),complex),integrate.cumtrapz(np.real(self.DfunctionTemp),self.tsample)),axis=-1)
-        self.Dfunction += 1.0j*np.concatenate((np.zeros((self.N,self.N,1),complex),integrate.cumtrapz(np.imag(self.DfunctionTemp),self.tsample)),axis=-1)#+np.identity(self.N,complex)[...,np.newaxis]*np.ones(self.smpnum) # new scipy will have initial kw            
+        
+        # self.Dfunction = np.concatenate((np.zeros((self.N,self.N,1),complex),integrate.cumtrapz(np.real(self.DfunctionTemp),self.tsample)),axis=-1)
+        # self.Dfunction += 1.0j*np.concatenate((np.zeros((self.N,self.N,1),complex),integrate.cumtrapz(np.imag(self.DfunctionTemp),self.tsample)),axis=-1)
+        self.Dfunction = integrate.cumtrapz(self.DfunctionTemp,self.tsample)
+        self.DfunctionTemp = []
+        gc.collect()        
+        # self.Dfunction += 1.0j*integrate.cumtrapz(np.imag(self.DfunctionTemp),self.tsample)
+        self.Dfunction = np.concatenate((np.zeros((self.N,self.N,1),complex),self.Dfunction),axis=-1)
         for i in range(self.N):
             self.Dfunction[i,i,:] += np.ones(self.smpnum,complex)
         self.order += 1
@@ -203,7 +216,9 @@ if __name__ == '__main__':
         t1 = time.time()                        
         markov.addOrder()
         t2 = time.time()
-        print 'took %0.3f ms' % ((t2-t1)*1000.0)            
+        print 'took %0.3f ms' % ((t2-t1)*1000.0)
+        markov.prepareT()
+        markov.prepareD()        
         markov.plotGraph(title=str(i)+"th order")
     markov.pp.close()
     markov.write()
