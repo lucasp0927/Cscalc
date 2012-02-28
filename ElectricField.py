@@ -11,7 +11,8 @@ class ElectricField(object):
     def __init__(self, ):
         """
         """
-        self.carrier_freq = (1000000000000000)*2*np.pi # carrier frequency in rad
+        #self.carrier_freq = (1000000000000000)*2*np.pi # carrier frequency in rad
+        self.carrier_freq = (335.116048807e12+5.170855370625e9)*2*np.pi # carrier frequency in rad        
         self.repetition_freq = 100e6*2*np.pi # repetition frequency in rad
         self.cutoff = 2e-13#where electric field start consider to be zero
         self.sample = 100

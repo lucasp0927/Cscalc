@@ -46,6 +46,8 @@ class Pulse(object):
             state[self.ij2idx(i,i)] = 1.0/len(self.group[start])
         data = np.zeros((3,num*2))
         for i in range(num):
+            sys.stdout.write('%s\r' % i)
+            sys.stdout.flush()            
             state = np.dot(self.P,state.T)
             time += self.cutoff
             time_arr.append(time)
@@ -88,12 +90,16 @@ class Pulse(object):
             state[self.ij2idx(i,i)] = 1.0/len(self.group[start])
         data = np.zeros((3,number))        
         for t in enumerate(rept):
+            sys.stdout.write('%s\r' % t[0])
+            sys.stdout.flush()
+            #print t[0]
             M = np.dot(linalg.expm(self.T*(t[1]-self.cutoff)),self.P)
             M = np.linalg.matrix_power(M,pnum)
             state1 = np.dot(M,state.T)
             for j in range(3):           # make this more elegent
                 for k in self.group[j]:
                     data[j][t[0]] += np.real(state1[self.ij2idx(k,k)])
+        #print data
         plt.figure(1)                    
         fig = plt.subplot(1,1,1)
         plt.title("test")
@@ -109,6 +115,6 @@ class Pulse(object):
             
 if __name__ == '__main__':
     p = Pulse()
-    #p.time_plot(1.7e-9,10000)
-    p.freq_plot(1e8,2e8,10000,10000)    
+    #p.time_plot(1e-8,1000)
+    p.freq_plot(1e8,2e8,1000,10000)    
     #p.freq_plot(1e-9,2e-9,10000,20000)

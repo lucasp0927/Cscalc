@@ -38,6 +38,7 @@ class Markov(object):
         self.Dfunction = np.empty((self.N,self.N,self.smpnum),complex)
         self.DfunctionTemp =[] #np.empty((self.N,self.N,self.smpnum),complex)
         self.order = 0
+        self.parameter = {}
         dictf.close()
 
     def ij2idx(self,i,j):
@@ -87,8 +88,9 @@ class Markov(object):
 
     def zeroOrder(self):
         for i in enumerate(self.tsample):
-            print i[0]
-            self.Dfunction[:,:,i[0]]=linalg.expm(self.T*i[1])
+            sys.stdout.write('%s\r' % i[0])
+            sys.stdout.flush()            
+            self.Dfunction[:,:,i[0]]=linalg.expm(self.T*i[1],15)
 
     def addOrder(self):
         self.DfunctionTemp = np.empty((self.N,self.N,self.smpnum),complex)        
@@ -97,7 +99,7 @@ class Markov(object):
         self.Dfunction = []
         self.T = []
         self.D = []
-        gc.collect()        
+        gc.collect()                    # clean up memory
         self.Dfunction = integrate.cumtrapz(self.DfunctionTemp,self.tsample)
         self.DfunctionTemp = []
         gc.collect()        
@@ -164,4 +166,4 @@ if __name__ == '__main__':
         markov.plotGraph(title=str(i)+"th order")
     markov.pp.close()
     markov.write()
-    
+    print "See the output PDF file to check if purturbation converge."
