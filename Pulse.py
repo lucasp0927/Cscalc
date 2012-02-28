@@ -36,6 +36,7 @@ class Pulse(object):
         return idx
         
     def time_plot(self,rep,num):
+        print "plot time domain, total",num,"points."
         r_t = rep - self.cutoff
         expT = linalg.expm(self.T*r_t)
         start = 1
@@ -44,30 +45,30 @@ class Pulse(object):
         time = 0.0
         for i in self.group[start]:
             state[self.ij2idx(i,i)] = 1.0/len(self.group[start])
-        data = np.zeros((3,num*2))
-        for i in range(num):
+        data = np.zeros((3,num+num))
+        for i in xrange(num):
             sys.stdout.write('%s\r' % i)
-            sys.stdout.flush()            
+            sys.stdout.flush()
             state = np.dot(self.P,state.T)
             time += self.cutoff
             time_arr.append(time)
-            for j in range(3):           # make this more elegent
+            for j in xrange(3):           # make this more elegent
                 for k in self.group[j]:
-                    data[j][2*i] += np.real(state[self.ij2idx(k,k)])
+                    data[j][i+i] += np.real(state[self.ij2idx(k,k)]) # i+i is slightly faster than i*2
             state = np.dot(expT,state.T)
             #print state
             time += r_t
             time_arr.append(time)            
-            for j in range(3):           # make this more elegent
+            for j in xrange(3):           # make this more elegent
                 for k in self.group[j]:
-                    data[j][2*i+1] += np.real(state[self.ij2idx(k,k)])                    
+                    data[j][i+i+1] += np.real(state[self.ij2idx(k,k)])                    
         plt.figure(1)                    
         fig = plt.subplot(1,1,1)
         plt.title("test")
         plt.ylim(0,1)
         plt.xlabel('time')
         plt.ylabel('population')
-        for i in range(3):
+        for i in xrange(3):
             fig.plot(time_arr,data[i],label=str(i))
         handles, labels = fig.get_legend_handles_labels()
         fig.legend(handles[::-1], labels[::-1])
@@ -75,13 +76,14 @@ class Pulse(object):
         
     def correct(self,arr):
         # TODO: write in better numpy way
-        for i in range(self.n):
+        for i in xrange(self.n):
             if (real(arr[self.ij2idx(i,i)])<0.0 or real(arr[self.ij2idx(i,i)])>1.0):
                 return False
         else:
             return True
 
     def freq_plot(self,start,end,number,pnum):
+        print "plot frequency domain, total",number,"points."
         repf = np.linspace(start,end,number)
         rept = 1.0/repf
         start = 1
@@ -96,7 +98,7 @@ class Pulse(object):
             M = np.dot(linalg.expm(self.T*(t[1]-self.cutoff)),self.P)
             M = np.linalg.matrix_power(M,pnum)
             state1 = np.dot(M,state.T)
-            for j in range(3):           # make this more elegent
+            for j in xrange(3):           # make this more elegent
                 for k in self.group[j]:
                     data[j][t[0]] += np.real(state1[self.ij2idx(k,k)])
         #print data
@@ -106,7 +108,7 @@ class Pulse(object):
         plt.ylim(-1,2)
         plt.xlabel('repetition rate(Hz)')
         plt.ylabel('population')
-        for i in range(3):
+        for i in xrange(3):
             fig.plot(repf,data[i],label=str(i))
         handles, labels = fig.get_legend_handles_labels()
         fig.legend(handles[::-1], labels[::-1])
@@ -115,6 +117,6 @@ class Pulse(object):
             
 if __name__ == '__main__':
     p = Pulse()
-    #p.time_plot(1e-8,1000)
+    p.time_plot(1e-8,1000)
     p.freq_plot(1e8,2e8,1000,10000)    
     #p.freq_plot(1e-9,2e-9,10000,20000)

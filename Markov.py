@@ -63,14 +63,14 @@ class Markov(object):
 
     def prepareT(self):
         self.T = np.zeros((self.N,self.N),complex) # time independent part d rho/ dt = T rho        
-        for i in range(self.n):
-            for j in range(i,self.n):
+        for i in xrange(self.n):
+            for j in xrange(i,self.n):
                 for k in self.decoherence[i][j]:
                     self.T[self.ij2idx(i,j)][self.ij2idx(k[0],k[1])]+=k[2]
                     if i != j:
                         self.T[self.ij2idx(j,i)][self.ij2idx(k[1],k[0])]+=k[2]
-        for i in range(self.n):
-             for j in range(i+1,self.n):
+        for i in xrange(self.n):
+             for j in xrange(i+1,self.n):
                  if self.rotate_omega(i,j) > 1e11:
                      print i,j
                      print "error"
@@ -80,13 +80,14 @@ class Markov(object):
 
     def prepareD(self):
         self.D = np.zeros((self.N,self.N),complex) # time independent part d rho/ dt = T rho        
-        for i in range(self.n):
-            for j in range(self.n):
-                for k in range(self.n):
+        for i in xrange(self.n):
+            for j in xrange(self.n):
+                for k in xrange(self.n):
                     self.D[self.ij2idx(i,j)][self.ij2idx(k,j)] += -1.0j*(self.dipole[i][k] )/ HBAR
                     self.D[self.ij2idx(i,j)][self.ij2idx(i,k)] -= -1.0j*(self.dipole[k][j] )/ HBAR
 
     def zeroOrder(self):
+        print "zero order"
         for i in enumerate(self.tsample):
             sys.stdout.write('%s\r' % i[0])
             sys.stdout.flush()            
@@ -94,17 +95,21 @@ class Markov(object):
 
     def addOrder(self):
         self.DfunctionTemp = np.empty((self.N,self.N,self.smpnum),complex)        
-        for i in range(self.smpnum):
+        for i in xrange(self.smpnum):
             self.DfunctionTemp[...,i] = np.dot(self.T+self.D*self.EField.envelope(self.tsample[i]),self.Dfunction[...,i])
-        self.Dfunction = []
-        self.T = []
-        self.D = []
+        # self.Dfunction = []
+        # self.T = []
+        # self.D = []
+        del self.Dfunction
+        del self.T
+        del self.D
         gc.collect()                    # clean up memory
         self.Dfunction = integrate.cumtrapz(self.DfunctionTemp,self.tsample)
-        self.DfunctionTemp = []
+        #self.DfunctionTemp = []
+        del self.DfunctionTemp
         gc.collect()        
         self.Dfunction = np.concatenate((np.zeros((self.N,self.N,1),complex),self.Dfunction),axis=-1)
-        for i in range(self.N):
+        for i in xrange(self.N):
             self.Dfunction[i,i,:] += np.ones(self.smpnum,complex)
         self.order += 1
         
@@ -114,9 +119,9 @@ class Markov(object):
         for i in self.group[start]:
             state[self.ij2idx(i,i)] = 1.0/len(self.group[start])
         data = np.zeros((3,self.smpnum))
-        for i in range(self.smpnum):
+        for i in xrange(self.smpnum):
             state1 = np.dot(self.Dfunction[:,:,i],state.T)
-            for j in range(3):           # make this more elegent
+            for j in xrange(3):           # make this more elegent
                 for k in self.group[j]:
                     data[j][i] += np.real(state1[self.ij2idx(k,k)])
         plt.figure(1)                    
@@ -125,7 +130,7 @@ class Markov(object):
         plt.ylim(0,1)
         plt.xlabel('time')
         plt.ylabel('population')
-        for i in range(3):
+        for i in xrange(3):
             fig.plot(self.tsample,data[i],label=str(i))
         handles, labels = fig.get_legend_handles_labels()
         fig.legend(handles[::-1], labels[::-1])
@@ -155,7 +160,7 @@ if __name__ == '__main__':
     markov.prepareT()
     markov.prepareD()
     markov.zeroOrder()
-    for i in range(20):
+    for i in xrange(30):
         print "order ",i
         t1 = time.time()                        
         markov.addOrder()
