@@ -153,7 +153,7 @@ if __name__ == '__main__':
     markov.prepareT()
     markov.prepareD()
     markov.zeroOrder()
-    for i in range(5):
+    for i in range(20):
         print "order ",i
         t1 = time.time()                        
         markov.addOrder()
