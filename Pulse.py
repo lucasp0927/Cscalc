@@ -86,7 +86,7 @@ class Pulse(object):
             print linalg.eig(M)
 if __name__ == '__main__':
     p = Pulse()
-    p.time_plot(1.7313e-11,50000)
+    p.time_plot(1.7313e-9,1000000)
     M = dot(linalg.expm(p.T*(1e-8-p.cutoff)),p.P)
     W,V = linalg.eig(M)
     for v in V.T:
