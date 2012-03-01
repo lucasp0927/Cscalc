@@ -111,7 +111,8 @@ class Pulse(object):
             M = M - np.identity(p.N)
             M[-1,...] = self.lastrow
             state1 = linalg.solve(M,self.con)
-            data[:,t[0]] = np.sum(np.real(state1[self.ii2idxv(self.group[:])]),-1)
+            for g in enumerate(self.group):
+                data[g[0],t[0]] = np.sum(np.real(state1[self.ii2idxv(g[1][:])]),-1)
 
         plt.figure(1)                    
         fig = plt.subplot(1,1,1)
