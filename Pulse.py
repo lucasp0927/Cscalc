@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 from __future__ import division
 import sys
 import numpy as np
@@ -106,13 +106,13 @@ class Pulse(object):
             sys.stdout.flush()
             #print t[0]
             M = np.dot(linalg.expm(self.T*(t[1]-self.cutoff)),self.P)
-            # M = np.linalg.matrix_power(M,pnum)
-            # state1 = np.dot(M,state.T)
-            M = M - np.identity(p.N)
-            M[-1,...] = self.lastrow
-            state1 = linalg.solve(M,self.con)
+            M = np.linalg.matrix_power(M,1000)
+            state1 = np.dot(M,state.T)
+            # M = M - np.identity(p.N)
+            # M[-1,...] = self.lastrow
+            # state1 = linalg.solve(M,self.con)
             for g in enumerate(self.group):
-                data[g[0],t[0]] = np.sum(np.real(state1[self.ii2idxv(g[1][:])]),-1)
+                data[g[0],t[0]] = np.sum(np.real(state1[self.ii2idxv(g[1][:])]))
 
         plt.figure(1)                    
         fig = plt.subplot(1,1,1)
@@ -130,5 +130,5 @@ if __name__ == '__main__':
     p = Pulse()
     M = p.P - np.identity(p.N)
     #p.time_plot(1e-8,1000)
-    p.freq_plot(1e8,1.5e9,1000)    
+    p.freq_plot(1.69e8,1.71e8,100)    
     #p.freq_plot(1e-9,2e-9,10000,20000)
