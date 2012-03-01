@@ -4,11 +4,11 @@ import sys,gc
 from ElectricField import ElectricField
 import numpy as np
 from scipy import linalg,integrate
-#from scipy.interpolate import interp1d,UnivariateSpline
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import time
 import pickle
+#from scipy.interpolate import interp1d,UnivariateSpline
 
 HBAR =  1.05457148e-34
 class Markov(object):
@@ -94,6 +94,7 @@ class Markov(object):
             self.Dfunction[:,:,i[0]]=linalg.expm(self.T*i[1],15)
 
     def addOrder(self):
+        last = self.Dfunction[...,-1]
         self.DfunctionTemp = np.empty((self.N,self.N,self.smpnum),complex)        
         for i in xrange(self.smpnum):
             self.DfunctionTemp[...,i] = np.dot(self.T+self.D*self.EField.envelope(self.tsample[i]),self.Dfunction[...,i])
@@ -112,6 +113,9 @@ class Markov(object):
         for i in xrange(self.N):
             self.Dfunction[i,i,:] += np.ones(self.smpnum,complex)
         self.order += 1
+        now = self.Dfunction[...,-1]
+        return linalg.norm(now-last)
+    #print "difference norm %f" %linalg.norm(now-last)
         
     def plotGraph(self,title=""):
         start = 1
@@ -139,7 +143,6 @@ class Markov(object):
         #show()
         
     def write(self):
-        #        txtf = open(self.file_out+'.txt','w')
         data={}
         data['T'] = self.T
         data['P'] = self.Dfunction[:,:,-1]
@@ -147,28 +150,26 @@ class Markov(object):
         data['n'] = self.n
         data['N'] = self.N
         data['group'] = self.group
-        #txtf.write(str(data))
-        #txtf.close()
         pickle.dump( data, open( self.file_out+".p", "wb" ) )
         
-    def tidy(self):
-        # remove imag part in diagnopart
-        pass
-    
 if __name__ == '__main__':
     markov = Markov()
     markov.prepareT()
     markov.prepareD()
     markov.zeroOrder()
     for i in xrange(30):
-        print "order ",i
+        print "-------------------------"
+        print "order ",markov.order+1
         t1 = time.time()                        
-        markov.addOrder()
+        norm = markov.addOrder()
+        print "difference norm %e" %norm        
         t2 = time.time()
         print 'took %0.3f ms' % ((t2-t1)*1000.0)
         markov.prepareT()
         markov.prepareD()        
         markov.plotGraph(title=str(i)+"th order")
+        if norm == 0:
+            break
     markov.pp.close()
     markov.write()
     print "See the output PDF file to check if purturbation converge."
