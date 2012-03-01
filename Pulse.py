@@ -24,7 +24,14 @@ class Pulse(object):
         self.N = self.parameter['N']
         self.group = self.parameter['group']                
         self.cutoff = self.parameter['cutoff']        
-
+        self.lastrow = np.zeros(self.N,complex)
+        self.con = np.zeros(self.N,complex)
+        self.con[-1] = 1.0
+        p2 = [self.ij2idx(x,x) for x in range(self.n)]
+        for i in p2:
+            self.lastrow[i] = 1.0
+        self.ii2idxv = np.vectorize(self.ii2idx)
+        
     def ij2idx(self,i,j):
         """
         0 1 2
@@ -34,7 +41,10 @@ class Pulse(object):
         #idx = (i*(2*self.n-i+1))/2+(j-i)
         idx = self.n*i+j
         return idx
-        
+    
+    def ii2idx(self,i):
+        return (self.n+1)*i
+    
     def time_plot(self,rep,num):
         print "plot time domain, total",num,"points."
         r_t = rep - self.cutoff
@@ -82,7 +92,7 @@ class Pulse(object):
         else:
             return True
 
-    def freq_plot(self,start,end,number,pnum):
+    def freq_plot(self,start,end,number):#,pnum):
         print "plot frequency domain, total",number,"points."
         repf = np.linspace(start,end,number)
         rept = 1.0/repf
@@ -96,12 +106,13 @@ class Pulse(object):
             sys.stdout.flush()
             #print t[0]
             M = np.dot(linalg.expm(self.T*(t[1]-self.cutoff)),self.P)
-            M = np.linalg.matrix_power(M,pnum)
-            state1 = np.dot(M,state.T)
-            for j in xrange(3):           # make this more elegent
-                for k in self.group[j]:
-                    data[j][t[0]] += np.real(state1[self.ij2idx(k,k)])
-        #print data
+            # M = np.linalg.matrix_power(M,pnum)
+            # state1 = np.dot(M,state.T)
+            M = M - np.identity(p.N)
+            M[-1,...] = self.lastrow
+            state1 = linalg.solve(M,self.con)
+            data[:,t[0]] = np.sum(np.real(state1[self.ii2idxv(self.group[:])]),-1)
+
         plt.figure(1)                    
         fig = plt.subplot(1,1,1)
         plt.title("test")
@@ -114,9 +125,9 @@ class Pulse(object):
         fig.legend(handles[::-1], labels[::-1])
         plt.show()                            
 
-            
 if __name__ == '__main__':
     p = Pulse()
+    M = p.P - np.identity(p.N)
     #p.time_plot(1e-8,1000)
-    p.freq_plot(1.1e9,1.5e9,10000,100000)    
+    p.freq_plot(1e8,1.5e9,1000)    
     #p.freq_plot(1e-9,2e-9,10000,20000)
