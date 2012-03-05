@@ -106,8 +106,10 @@ class Pulse(object):
             sys.stdout.flush()
             #print t[0]
             M = np.dot(linalg.expm(self.T*(t[1]-self.cutoff)),self.P)
-            M = np.linalg.matrix_power(M,1000)
+            
+            M = np.linalg.matrix_power(M,10000)
             state1 = np.dot(M,state.T)
+            
             # M = M - np.identity(p.N)
             # M[-1,...] = self.lastrow
             # state1 = linalg.solve(M,self.con)
@@ -129,6 +131,6 @@ class Pulse(object):
 if __name__ == '__main__':
     p = Pulse()
     M = p.P - np.identity(p.N)
-    #p.time_plot(1e-8,1000)
-    p.freq_plot(1.69e8,1.71e8,100)    
+    p.time_plot(1.67e-8,10000)
+    p.freq_plot(1.668e8,1.676e8,200)    
     #p.freq_plot(1e-9,2e-9,10000,20000)
