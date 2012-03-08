@@ -157,7 +157,7 @@ if __name__ == '__main__':
     markov.prepareT()
     markov.prepareD()
     markov.zeroOrder()
-    for i in xrange(30):
+    for i in xrange(50):
         print "-------------------------"
         print "order ",markov.order+1
         t1 = time.time()                        

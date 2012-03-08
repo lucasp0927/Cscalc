@@ -47,7 +47,8 @@ class ElectricField(object):
         print "rabi frequency area: "
         print 4e5*integrate.quad(ef.envelope,0,ef.cutoff)[0] #4e5 is dipole moment / hbar
         print "average power:"
-        print str(8.85e-12/2*integrate.quad(lambda x:ef.envelope(x)**2,0,ef.cutoff)[0]/(2*np.pi/ef.repetition_freq))+"w/m^2"
+        print str(8.85e-12/2*integrate.romberg(lambda x:(ef.envelope(x)*np.sin(self.carrier_freq*x))**2,0,ef.cutoff,divmax=20)/(2*np.pi/ef.repetition_freq))+"w/m^2"
+        print str(8.85e-12/4*integrate.romberg(lambda x:(ef.envelope(x))**2,0,ef.cutoff)/(2*np.pi/ef.repetition_freq))+"w/m^2"        
         Ts = ef.cutoff/500.0
         x = np.arange(0, ef.cutoff, Ts)
         env_vec = np.vectorize(ef.envelope)

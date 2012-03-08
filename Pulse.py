@@ -131,6 +131,6 @@ class Pulse(object):
 if __name__ == '__main__':
     p = Pulse()
     M = p.P - np.identity(p.N)
-    p.time_plot(1.67e-8,10000)
-    p.freq_plot(1.668e8,1.676e8,200)    
+    p.time_plot(1.67e-8,100)
+    p.freq_plot(9105000,9125000,200)    
     #p.freq_plot(1e-9,2e-9,10000,20000)

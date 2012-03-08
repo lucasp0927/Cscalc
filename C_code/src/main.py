@@ -65,7 +65,7 @@ if __name__ == '__main__':
         print 'norm',np.linalg.norm(C-C_h)        
 
     for i in range(10):
-        testc()
+        testz()
 
     print 'finish'
 
