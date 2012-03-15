@@ -27,6 +27,7 @@ class Pulse(object):
         self.lastrow = np.zeros(self.N,complex)
         self.con = np.zeros(self.N,complex)
         self.con[-1] = 1.0
+        self.ef = ElectricField()
         p2 = [self.ij2idx(x,x) for x in range(self.n)]
         for i in p2:
             self.lastrow[i] = 1.0
@@ -92,9 +93,10 @@ class Pulse(object):
         else:
             return True
 
-    def freq_plot(self,start,end,number):#,pnum):
+    def freq_plot(self,range,number):#,pnum):
         print "plot frequency domain, total",number,"points."
-        repf = np.linspace(start,end,number)
+        rf = self.ef.repetition_freq/(2*np.pi)
+        repf = np.linspace(rf-range,rf+range,number)
         rept = 1.0/repf
         start = 1
         state = np.zeros(self.N,complex)
@@ -107,19 +109,19 @@ class Pulse(object):
             #print t[0]
             M = np.dot(linalg.expm(self.T*(t[1]-self.cutoff)),self.P)
             
-            M = np.linalg.matrix_power(M,10000)
-            state1 = np.dot(M,state.T)
+            # M = np.linalg.matrix_power(M,10000)
+            # state1 = np.dot(M,state.T)
             
-            # M = M - np.identity(p.N)
-            # M[-1,...] = self.lastrow
-            # state1 = linalg.solve(M,self.con)
+            M = M - np.identity(p.N)
+            M[-1,...] = self.lastrow
+            state1 = linalg.solve(M,self.con)
             for g in enumerate(self.group):
                 data[g[0],t[0]] = np.sum(np.real(state1[self.ii2idxv(g[1][:])]))
 
         plt.figure(1)                    
         fig = plt.subplot(1,1,1)
         plt.title("test")
-        plt.ylim(-1,2)
+        plt.ylim(0,1)
         plt.xlabel('repetition rate(Hz)')
         plt.ylabel('population')
         for i in xrange(3):
@@ -131,6 +133,6 @@ class Pulse(object):
 if __name__ == '__main__':
     p = Pulse()
     M = p.P - np.identity(p.N)
-    p.time_plot(1.67e-8,100)
-    p.freq_plot(9105000,9125000,200)    
+    #p.time_plot(1.67e-8,100)
+    p.freq_plot(1e5,1000)    
     #p.freq_plot(1e-9,2e-9,10000,20000)
