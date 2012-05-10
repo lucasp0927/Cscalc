@@ -109,12 +109,12 @@ class Pulse(object):
             #print t[0]
             M = np.dot(linalg.expm(self.T*(t[1]-self.cutoff)),self.P)
             
-            # M = np.linalg.matrix_power(M,10000)
-            # state1 = np.dot(M,state.T)
+            M = np.linalg.matrix_power(M,10000)
+            state1 = np.dot(M,state.T)
             
-            M = M - np.identity(p.N)
-            M[-1,...] = self.lastrow
-            state1 = linalg.solve(M,self.con)
+            # M = M - np.identity(p.N)
+            # M[-1,...] = self.lastrow
+            # state1 = linalg.solve(M,self.con)
             for g in enumerate(self.group):
                 data[g[0],t[0]] = np.sum(np.real(state1[self.ii2idxv(g[1][:])]))
 
@@ -144,5 +144,9 @@ if __name__ == '__main__':
     p = Pulse()
     M = p.P - np.identity(p.N)
     #p.time_plot(1.67e-8,100)
+<<<<<<< HEAD
     p.freq_plot(3e3,1000)    
+=======
+    p.freq_plot(1e5,60)    
+>>>>>>> b33302c16ac2ad0a64f4cc6c36602ffdc6c3cfda
     #p.freq_plot(1e-9,2e-9,10000,20000)

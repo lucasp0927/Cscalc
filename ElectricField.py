@@ -14,12 +14,21 @@ class ElectricField(object):
         #self.carrier_freq = (1000000000000000)*2*np.pi # carrier frequency in rad
         self.carrier_freq = (335.116048807e12+5.170855370625e9)*2*np.pi # carrier frequency in rad
         #self.carrier_freq = 2105631933334755.8 # carrier frequency in rad                
+<<<<<<< HEAD
         self.repetition_freq = 91.016e6*2*np.pi # repetition frequency in rad
         self.factor = 100
         self.sigma = 20e-15
         self.cutoff = self.sigma*10.0#where electric field start consider to be zero
         self.sample = 100
         self.maxima = 1e6*np.sqrt(self.factor)
+=======
+        self.repetition_freq = 91.3e6*2*np.pi # repetition frequency in rad
+        self.factor = 100
+        self.sigma = 20e-15*self.factor
+        self.cutoff = self.sigma*10.0#where electric field start consider to be zero
+        self.sample = 100
+        self.maxima = 1e6/np.sqrt(self.factor)
+>>>>>>> b33302c16ac2ad0a64f4cc6c36602ffdc6c3cfda
         print "sigma:",self.sigma
         
     def envelope(self,t):
