@@ -93,10 +93,10 @@ class Pulse(object):
         else:
             return True
 
-    def freq_plot(self,range,number):#,pnum):
+    def freq_plot(self,freq_range,number):#,pnum):
         print "plot frequency domain, total",number,"points."
         rf = self.ef.repetition_freq/(2*np.pi)
-        repf = np.linspace(rf-range,rf+range,number)
+        repf = np.linspace(rf-freq_range,rf+freq_range,number)
         rept = 1.0/repf
         start = 1
         state = np.zeros(self.N,complex)
@@ -121,11 +121,21 @@ class Pulse(object):
         plt.figure(1)                    
         fig = plt.subplot(1,1,1)
         plt.title("test")
-        plt.ylim(0,1)
+        #plt.ylim(0,1)
         plt.xlabel('repetition rate(Hz)')
         plt.ylabel('population')
-        for i in xrange(3):
+        for i in xrange(0,1):
             fig.plot(repf,data[i],label=str(i))
+            if i == 0:
+                mean = np.min(data[0]) + (np.max(data[0])-np.min(data[0]))/2.0
+                for f in xrange(len(repf)-1):
+                    if data[0][f] == np.min(data[0]):
+                        print "min is at:",repf[f],"Hz"
+                    if data[0][f+1]<mean and data[0][f]>mean:
+                        low = repf[f]
+                    if data[0][f+1]>mean and data[0][f]<mean:
+                        high = repf[f]                        
+                print(high - low)
         handles, labels = fig.get_legend_handles_labels()
         fig.legend(handles[::-1], labels[::-1])
         plt.show()                            
@@ -134,5 +144,5 @@ if __name__ == '__main__':
     p = Pulse()
     M = p.P - np.identity(p.N)
     #p.time_plot(1.67e-8,100)
-    p.freq_plot(1e5,1000)    
+    p.freq_plot(3e3,1000)    
     #p.freq_plot(1e-9,2e-9,10000,20000)
