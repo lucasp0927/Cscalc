@@ -118,7 +118,7 @@ class Markov(object):
     #print "difference norm %f" %linalg.norm(now-last)
         
     def plotGraph(self,title=""):
-        start = 1
+        start = 0
         state = np.zeros(self.N,complex)
         for i in self.group[start]:
             state[self.ij2idx(i,i)] = 1.0/len(self.group[start])
