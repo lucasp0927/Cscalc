@@ -109,7 +109,7 @@ class Pulse(object):
             #print t[0]
             M = np.dot(linalg.expm(self.T*(t[1]-self.cutoff)),self.P)
             
-            M = np.linalg.matrix_power(M,10000)
+            M = np.linalg.matrix_power(M,200000)
             state1 = np.dot(M,state.T)
             
             # M = M - np.identity(p.N)
@@ -120,22 +120,22 @@ class Pulse(object):
 
         plt.figure(1)                    
         fig = plt.subplot(1,1,1)
-        plt.title("test")
-        #plt.ylim(0,1)
+        plt.title("population vs repetition rate")
+        #plt.ylim(-0.1,1.1)
         plt.xlabel('repetition rate(Hz)')
         plt.ylabel('population')
-        for i in xrange(0,1):
+        for i in xrange(0,3):
             fig.plot(repf,data[i],label=str(i))
-            if i == 0:
-                mean = np.min(data[0]) + (np.max(data[0])-np.min(data[0]))/2.0
-                for f in xrange(len(repf)-1):
-                    if data[0][f] == np.min(data[0]):
-                        print "min is at:",repf[f],"Hz"
-                    if data[0][f+1]<mean and data[0][f]>mean:
-                        low = repf[f]
-                    if data[0][f+1]>mean and data[0][f]<mean:
-                        high = repf[f]                        
-                print(high - low)
+            # if i == 0:
+            #     mean = np.min(data[0]) + (np.max(data[0])-np.min(data[0]))/2.0
+            #     for f in xrange(len(repf)-1):
+            #         if data[0][f] == np.min(data[0]):
+            #             print "min is at:",repf[f],"Hz"
+            #         if data[0][f+1]<mean and data[0][f]>mean:
+            #             low = repf[f]
+            #         if data[0][f+1]>mean and data[0][f]<mean:
+            #             high = repf[f]                        
+            #     print(high - low)
         handles, labels = fig.get_legend_handles_labels()
         fig.legend(handles[::-1], labels[::-1])
         plt.show()                            
@@ -144,5 +144,5 @@ if __name__ == '__main__':
     p = Pulse()
     M = p.P - np.identity(p.N)
     #p.time_plot(1.67e-8,100)
-    p.freq_plot(3e3,1000)    
+    p.freq_plot(2e3,100)    
     #p.freq_plot(1e-9,2e-9,10000,20000)

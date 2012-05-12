@@ -272,15 +272,15 @@ class Parameter(object):
         self.decoherence()
         #print "      L   F   M|"
         #print "----------------------------------------"
-        sum = 0.0
-        psum = 0.0
-        for i in range(self.parameter['n']):
-            iter = self.parameter['decoherence_matrix'][i][i]
-            for j in iter:
-                sum += j[2]
-                psum += j[2]
+        # sum = 0.0
+        # psum = 0.0
+        # for i in range(self.parameter['n']):
+        #     iter = self.parameter['decoherence_matrix'][i][i]
+        #     for j in iter:
+        #         sum += j[2]
+        #         psum += j[2]
          #   print "{:3d}:{:3d} {:3d} {:3d}| {:<100} |Sum is: {:>20f}".format(i,self.index2lfm(i)[0],self.index2lfm(i)[1],self.index2lfm(i)[2],iter,psum)
-            psum = 0.0
+            # psum = 0.0
 
         #print "the sum is %f" %sum
         txtf = open(self.filename+'.txt','w')

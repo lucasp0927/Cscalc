@@ -9,7 +9,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 import time
 import pickle
 #from scipy.interpolate import interp1d,UnivariateSpline
-
+HBAR = 1.05457148e-34
 #HBAR =  1.05457148e-34
 class Markov(object):
     """
@@ -83,8 +83,8 @@ class Markov(object):
         for i in xrange(self.n):
             for j in xrange(self.n):
                 for k in xrange(self.n):
-                    self.D[self.ij2idx(i,j)][self.ij2idx(k,j)] += -1.0j*(self.dipole[i][k] )#/ HBAR
-                    self.D[self.ij2idx(i,j)][self.ij2idx(i,k)] -= -1.0j*(self.dipole[k][j] )#/ HBAR
+                    self.D[self.ij2idx(i,j)][self.ij2idx(k,j)] += -1.0j*(self.dipole[i][k] )/ HBAR
+                    self.D[self.ij2idx(i,j)][self.ij2idx(i,k)] -= -1.0j*(self.dipole[k][j] )/ HBAR
 
     def zeroOrder(self):
         print "zero order"
@@ -160,7 +160,7 @@ if __name__ == '__main__':
     for i in xrange(50):
         print "-------------------------"
         print "order ",markov.order+1
-        t1 = time.time()                        
+        t1 = time.time()
         norm = markov.addOrder()
         print "difference norm %e" %norm        
         t2 = time.time()
