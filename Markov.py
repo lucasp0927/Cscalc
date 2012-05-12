@@ -11,7 +11,7 @@ import pickle
 #from scipy.interpolate import interp1d,UnivariateSpline
 HBAR = 1.05457148e-34
 #HBAR = 1.0
-#HBAR =  1.05457148e-34
+
 class Markov(object):
     """
     """
@@ -105,8 +105,9 @@ class Markov(object):
         del self.T
         del self.D
         gc.collect()                    # clean up memory
+        #should rewrite cumtrapz with C to use less memory
+        #self.Dfunction = np.zeros((self.N,self.N,self.smpnum),complex)        
         self.Dfunction = integrate.cumtrapz(self.DfunctionTemp,self.tsample)
-        #self.DfunctionTemp = []
         del self.DfunctionTemp
         gc.collect()        
         self.Dfunction = np.concatenate((np.zeros((self.N,self.N,1),complex),self.Dfunction),axis=-1)
@@ -168,7 +169,7 @@ if __name__ == '__main__':
         print 'took %0.3f ms' % ((t2-t1)*1000.0)
         markov.prepareT()
         markov.prepareD()        
-        markov.plotGraph(title=str(i)+"th order")
+        #markov.plotGraph(title=str(i)+"th order")
         if norm == 0:
             break
     markov.pp.close()
