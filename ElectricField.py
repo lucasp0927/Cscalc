@@ -22,7 +22,6 @@ class ElectricField(object):
         self.cutoff = self.sigma*10.0#where electric field start consider to be zero
         self.sample = 100
         self.maxima = 1e6*np.sqrt(self.factor)
-        print "sigma:",self.sigma
         
     def envelope(self,t):
         """
@@ -49,15 +48,18 @@ class ElectricField(object):
         xlabel('Freq (Hz)')
         ylabel('|Y(freq)|')
 
+    def calpower(self,):
+        return str(8.85e-12/2*integrate.romberg(lambda x:(self.envelope(x)*np.sin(self.carrier_freq*x))**2,0,self.cutoff,divmax=20)/(2*np.pi/self.repetition_freq))+"w/m^2"
+    
     def check(self,):
         print "rabi frequency area: "
-        print 4e5*integrate.quad(ef.envelope,0,ef.cutoff)[0] #4e5 is dipole moment / hbar
+        print 4e5*integrate.quad(self.envelope,0,self.cutoff)[0] #4e5 is dipole moment / hbar
         print "average power:"
-        print str(8.85e-12/2*integrate.romberg(lambda x:(ef.envelope(x)*np.sin(self.carrier_freq*x))**2,0,ef.cutoff,divmax=20)/(2*np.pi/ef.repetition_freq))+"w/m^2"
-        print str(8.85e-12/4*integrate.romberg(lambda x:(ef.envelope(x))**2,0,ef.cutoff)/(2*np.pi/ef.repetition_freq))+"w/m^2"        
-        Ts = ef.cutoff/500.0
-        x = np.arange(0, ef.cutoff, Ts)
-        env_vec = np.vectorize(ef.envelope)
+        print self.calpower()
+        print str(8.85e-12/4*integrate.romberg(lambda x:(self.envelope(x))**2,0,self.cutoff)/(2*np.pi/self.repetition_freq))+"w/m^2"        
+        Ts = self.cutoff/500.0
+        x = np.arange(0, self.cutoff, Ts)
+        env_vec = np.vectorize(self.envelope)
         y = env_vec(x)
         print "please check if rotating wave approximation is valid."
         # plot envelope and its spectrum

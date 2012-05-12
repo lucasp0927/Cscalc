@@ -14,10 +14,9 @@ class Pulse(object):
     def __init__(self, ):
         """
         """
-        file_in = sys.argv[1]        
-        #        dictf = open(file_in,'r')
+        file_in = sys.argv[1]
+        self.file_out=open(str.split(file_in,'.')[0]+"_freq.dat","w")
         self.parameter = pickle.load( open( file_in, "rb" ) )
-         #self.parameter = eval(dictf.read())
         self.T = self.parameter['T']
         self.P = self.parameter['P']
         self.n = self.parameter['n']
@@ -32,6 +31,7 @@ class Pulse(object):
         for i in p2:
             self.lastrow[i] = 1.0
         self.ii2idxv = np.vectorize(self.ii2idx)
+        self.dump_header()
         
     def ij2idx(self,i,j):
         """
@@ -46,6 +46,13 @@ class Pulse(object):
     def ii2idx(self,i):
         return (self.n+1)*i
     
+    def dump_header(self,):
+        self.file_out.write("carrier freq: "+str(self.ef.carrier_freq)+" rad\n")
+        self.file_out.write("centeral repetitoin freq: "+str(self.ef.repetition_freq)+" rad\n")        
+        self.file_out.write("sigma: "+str(self.ef.sigma)+"\n")
+        self.file_out.write("maxima: "+str(self.ef.maxima)+"\n")
+        self.file_out.write("average power: "+str(self.ef.calpower())+"\n")        
+        
     def time_plot(self,rep,num):
         print "plot time domain, total",num,"points."
         r_t = rep - self.cutoff
@@ -85,13 +92,13 @@ class Pulse(object):
         fig.legend(handles[::-1], labels[::-1])
         plt.show()
         
-    def correct(self,arr):
-        # TODO: write in better numpy way
-        for i in xrange(self.n):
-            if (real(arr[self.ij2idx(i,i)])<0.0 or real(arr[self.ij2idx(i,i)])>1.0):
-                return False
-        else:
-            return True
+    # def correct(self,arr):
+    #     # TODO: write in better numpy way
+    #     for i in xrange(self.n):
+    #         if (real(arr[self.ij2idx(i,i)])<0.0 or real(arr[self.ij2idx(i,i)])>1.0):
+    #             return False
+    #     else:
+    #         return True
 
     def freq_plot(self,freq_range,number):#,pnum):
         print "plot frequency domain, total",number,"points."
@@ -117,15 +124,16 @@ class Pulse(object):
             # state1 = linalg.solve(M,self.con)
             for g in enumerate(self.group):
                 data[g[0],t[0]] = np.sum(np.real(state1[self.ii2idxv(g[1][:])]))
-
-        plt.figure(1)                    
-        fig = plt.subplot(1,1,1)
-        plt.title("population vs repetition rate")
-        #plt.ylim(-0.1,1.1)
-        plt.xlabel('repetition rate(Hz)')
-        plt.ylabel('population')
-        for i in xrange(0,3):
-            fig.plot(repf,data[i],label=str(i))
+        
+        
+        # plt.figure(1)                    
+        # fig = plt.subplot(1,1,1)
+        # plt.title("population vs repetition rate")
+        # #plt.ylim(-0.1,1.1)
+        # plt.xlabel('repetition rate(Hz)')
+        # plt.ylabel('population')
+        # for i in xrange(0,3):
+        #     fig.plot(repf,data[i],label=str(i))
             # if i == 0:
             #     mean = np.min(data[0]) + (np.max(data[0])-np.min(data[0]))/2.0
             #     for f in xrange(len(repf)-1):
@@ -136,9 +144,9 @@ class Pulse(object):
             #         if data[0][f+1]>mean and data[0][f]<mean:
             #             high = repf[f]                        
             #     print(high - low)
-        handles, labels = fig.get_legend_handles_labels()
-        fig.legend(handles[::-1], labels[::-1])
-        plt.show()                            
+        # handles, labels = fig.get_legend_handles_labels()
+        # fig.legend(handles[::-1], labels[::-1])
+        # plt.show()                            
 
 if __name__ == '__main__':
     p = Pulse()
@@ -146,3 +154,4 @@ if __name__ == '__main__':
     #p.time_plot(1.67e-8,100)
     p.freq_plot(2e3,100)    
     #p.freq_plot(1e-9,2e-9,10000,20000)
+    p.file_out.close()
