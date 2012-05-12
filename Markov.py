@@ -10,15 +10,15 @@ import time
 import pickle
 #from scipy.interpolate import interp1d,UnivariateSpline
 HBAR = 1.05457148e-34
+#HBAR = 1.0
 #HBAR =  1.05457148e-34
 class Markov(object):
     """
     """
-    def __init__(self, ):
+    def __init__(self,file_in,file_out,ef):
         """
         """
-        file_in = sys.argv[1]
-        self.file_out = sys.argv[2]
+        self.file_out = file_out
         self.pp = PdfPages(self.file_out+".pdf")        
         dictf = open(file_in,'r')
         self.parameter = eval(dictf.read())
@@ -31,7 +31,7 @@ class Markov(object):
         self.T = [] # time independent part d rho/ dt = T rho
         self.D = [] # time independent part d rho/ dt = T rho
         self.final = np.zeros((self.N,self.N),complex) # final markov matrix
-        self.EField = ElectricField()
+        self.EField = ef
         self.smpnum = self.EField.sample
         self.cutoff = self.EField.cutoff
         self.tsample = np.linspace(0,self.EField.cutoff,self.smpnum)
@@ -153,7 +153,8 @@ class Markov(object):
         pickle.dump( data, open( self.file_out+".p", "wb" ) )
         
 if __name__ == '__main__':
-    markov = Markov()
+    ef = ElectricField()
+    markov = Markov(sys.argv[1],sys.argv[2],ef)
     markov.prepareT()
     markov.prepareD()
     markov.zeroOrder()

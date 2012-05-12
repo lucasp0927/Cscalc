@@ -18,16 +18,19 @@ class ElectricField(object):
         #self.repetition_freq = 91.016156e6*2*np.pi # repetition frequency in rad
         #self.repetition_freq = 91.9257518e6*2*np.pi # repetition frequency in rad        
         self.factor = 1
-        self.sigma = 20e-15
+        self.setfactor(self.factor)        
         self.cutoff = self.sigma*10.0#where electric field start consider to be zero
         self.sample = 100
-        self.maxima = 1e6*np.sqrt(self.factor)
         
+    def setfactor(self,f):
+        self.factor = float(f)
+        self.maxima = 1e5*np.sqrt(self.factor)
+        self.sigma = 20e-15
+
     def envelope(self,t):
         """
         the envelope function must start from t = 0
         """
-
         return self.maxima*np.exp(-(t-self.sigma*5)**2/(2*self.sigma**2))
 
     def plotSpectrum(self,y,Ts):
@@ -49,7 +52,7 @@ class ElectricField(object):
         ylabel('|Y(freq)|')
 
     def calpower(self,):
-        return str(8.85e-12/2*integrate.romberg(lambda x:(self.envelope(x)*np.sin(self.carrier_freq*x))**2,0,self.cutoff,divmax=20)/(2*np.pi/self.repetition_freq))+"w/m^2"
+        return '{:e}'.format(8.85e-12/2*integrate.romberg(lambda x:(self.envelope(x)*np.sin(self.carrier_freq*x))**2,0,self.cutoff,divmax=20)/(2*np.pi/self.repetition_freq))+"w/m^2"
     
     def check(self,):
         print "rabi frequency area: "

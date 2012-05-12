@@ -11,9 +11,10 @@ class Pulse(object):
     """
     """
 
-    def __init__(self, file_in):
+    def __init__(self, file_in, ef):
         """
         """
+        self.filename =str.split(file_in,'.')[0]+"_freq"         
         self.file_out=open(str.split(file_in,'.')[0]+"_freq.dat","w")
         self.parameter = pickle.load( open( file_in, "rb" ) )
         self.T = self.parameter['T']
@@ -25,7 +26,7 @@ class Pulse(object):
         self.lastrow = np.zeros(self.N,complex)
         self.con = np.zeros(self.N,complex)
         self.con[-1] = 1.0
-        self.ef = ElectricField()
+        self.ef = ef
         p2 = [self.ij2idx(x,x) for x in range(self.n)]
         for i in p2:
             self.lastrow[i] = 1.0
@@ -121,7 +122,7 @@ class Pulse(object):
             M = np.linalg.matrix_power(M,200000)
             state1 = np.dot(M,state.T)
 
-            # M = M - np.identity(p.N)
+            # M = M - np.identity(self.N)
             # M[-1,...] = self.lastrow
             # state1 = linalg.solve(M,self.con)
             for g in enumerate(self.group):
@@ -129,14 +130,15 @@ class Pulse(object):
 
         for rf in enumerate(repf):
             self.file_out.write('{0:<20} {1[0]:<20} {1[1]:<20} {1[2]:<20}\n'.format(rf[1],data[:,rf[0]]))
-        # plt.figure(1)
-        # fig = plt.subplot(1,1,1)
-        # plt.title("population vs repetition rate")
-        # #plt.ylim(-0.1,1.1)
-        # plt.xlabel('repetition rate(Hz)')
-        # plt.ylabel('population')
-        # for i in xrange(0,3):
-        #     fig.plot(repf,data[i],label=str(i))
+            
+        plt.figure(1)
+        fig = plt.subplot(1,1,1)
+        plt.title("population vs repetition rate")
+        #plt.ylim(-0.1,1.1)
+        plt.xlabel('repetition rate(Hz)')
+        plt.ylabel('population')
+        for i in xrange(0,1):
+            fig.plot(repf,data[i],label=str(i))
             # if i == 0:
             #     mean = np.min(data[0]) + (np.max(data[0])-np.min(data[0]))/2.0
             #     for f in xrange(len(repf)-1):
@@ -147,12 +149,13 @@ class Pulse(object):
             #         if data[0][f+1]>mean and data[0][f]<mean:
             #             high = repf[f]
             #     print(high - low)
-        # handles, labels = fig.get_legend_handles_labels()
-        # fig.legend(handles[::-1], labels[::-1])
-        # plt.show()
+        handles, labels = fig.get_legend_handles_labels()
+        fig.legend(handles[::-1], labels[::-1])
+        plt.savefig(self.filename)
 
 if __name__ == '__main__':
-    p = Pulse(sys.argv[1])
+    ef = ElectricField()
+    p = Pulse(sys.argv[1],ef)
     M = p.P - np.identity(p.N)
     #p.time_plot(1.67e-8,100)
     p.freq_plot(2e3,100)
