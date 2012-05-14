@@ -6,6 +6,8 @@ from scipy import linalg
 from ElectricField import ElectricField
 import matplotlib.pyplot as plt
 import pickle
+from multiprocessing import Process, Queue
+from math import ceil
 
 class Pulse(object):
     """
@@ -14,7 +16,7 @@ class Pulse(object):
     def __init__(self, file_in, ef):
         """
         """
-        self.filename =str.split(file_in,'.')[0]+"_freq"         
+        self.filename =str.split(file_in,'.')[0]+"_freq"
         self.file_out=open(str.split(file_in,'.')[0]+"_freq.dat","w")
         self.parameter = pickle.load( open( file_in, "rb" ) )
         self.T = self.parameter['T']
@@ -27,6 +29,7 @@ class Pulse(object):
         self.con = np.zeros(self.N,complex)
         self.con[-1] = 1.0
         self.ef = ef
+        self.process = 8
         p2 = [self.ij2idx(x,x) for x in range(self.n)]
         for i in p2:
             self.lastrow[i] = 1.0
@@ -52,7 +55,7 @@ class Pulse(object):
         self.file_out.write("#sigma: "+str(self.ef.sigma)+"\n")
         self.file_out.write("#maxima: "+str(self.ef.maxima)+"\n")
         self.file_out.write("#average power: "+str(self.ef.calpower())+"\n")
-        self.file_out.write("#factor: "+str(self.ef.factor)+"\n")        
+        self.file_out.write("#factor: "+str(self.ef.factor)+"\n")
         self.file_out.write("#{:-<80}\n".format(''))
         self.file_out.write("#{:<20} {:<20} {:<20} {:<20}\n".format("rep_freq(Hz)","population(0)","population(1)","population(2)"))
 
@@ -103,19 +106,14 @@ class Pulse(object):
     #     else:
     #         return True
 
-    def freq_plot(self,freq_range,number):#,pnum):
-        print "plot frequency domain, total",number,"points."
-        rf = self.ef.repetition_freq/(2*np.pi)
-        repf = np.linspace(rf-freq_range,rf+freq_range,number)
-        rept = 1.0/repf
-        start = 1
+    def plot_worker(self,q,job):
         state = np.zeros(self.N,complex)
+        start = 1
         for i in self.group[start]:
-            state[self.ij2idx(i,i)] = 1.0/len(self.group[start])
-        data = np.zeros((3,number))
-        for t in enumerate(rept):
-            sys.stdout.write('%s\r' % t[0])
-            sys.stdout.flush()
+            state[self.ij2idx(i,i)] = 1.0/len(self.group[start])        
+        for t in enumerate(job):
+            # sys.stdout.write('%s\r' % t[0])
+            # sys.stdout.flush()
             #print t[0]
             M = np.dot(linalg.expm(self.T*(t[1]-self.cutoff)),self.P)
 
@@ -126,29 +124,48 @@ class Pulse(object):
             # M[-1,...] = self.lastrow
             # state1 = linalg.solve(M,self.con)
             for g in enumerate(self.group):
-                data[g[0],t[0]] = np.sum(np.real(state1[self.ii2idxv(g[1][:])]))
-
-        for rf in enumerate(repf):
-            self.file_out.write('{0:<20} {1[0]:<20} {1[1]:<20} {1[2]:<20}\n'.format(rf[1],data[:,rf[0]]))
+                q.put([g[0],t[0],np.sum(np.real(state1[self.ii2idxv(g[1][:])]))])
+        
+    def freq_plot(self,freq_range,number):#,pnum):
+        print "plot frequency domain, total",number,"points."
+        rf = self.ef.repetition_freq/(2*np.pi)
+        repf = np.linspace(rf-freq_range,rf+freq_range,number)
+        rept = 1.0/repf
+        data = np.zeros((3,number))
+        
+        def chunks(l, n):
+            n = int(ceil(float(len(l))/float(n)))
+            return [l[i:i+n] for i in range(0, len(l), n)]
+        q = Queue()
+        process = []
+        for i in range(self.process):
+            process.append(Process(target=self.plot_worker, args=(q,chunks(rept,self.process)[i])))
+        for p in process:
+            p.start()
+        n = 0
+        while n < len(rept)*len(self.group): # better way?
+            try:
+                d = q.get()
+                data[d[0],d[1]] = d[2]
+                n += 1
+                sys.stdout.write('%s\r' % int(n/3))
+                sys.stdout.flush()                
+            except Queue.Empty:
+                pass
+        for p in process:
+            p.join()
             
+        for rf in enumerate(repf):
+            self.file_out.write('{0:<20} {1[0]:<20} {1[1]:<20} {1[2]:<20}\n'.format(rf[1],data[:,rf[0]])) # output to log file
+
         plt.figure(1)
         fig = plt.subplot(1,1,1)
         plt.title("population vs repetition rate")
         #plt.ylim(-0.1,1.1)
         plt.xlabel('repetition rate(Hz)')
         plt.ylabel('population')
-        for i in xrange(0,1):
+        for i in xrange(0,1):           # plot only highest level
             fig.plot(repf,data[i],label=str(i))
-            # if i == 0:
-            #     mean = np.min(data[0]) + (np.max(data[0])-np.min(data[0]))/2.0
-            #     for f in xrange(len(repf)-1):
-            #         if data[0][f] == np.min(data[0]):
-            #             print "min is at:",repf[f],"Hz"
-            #         if data[0][f+1]<mean and data[0][f]>mean:
-            #             low = repf[f]
-            #         if data[0][f+1]>mean and data[0][f]<mean:
-            #             high = repf[f]
-            #     print(high - low)
         handles, labels = fig.get_legend_handles_labels()
         fig.legend(handles[::-1], labels[::-1])
         plt.savefig(self.filename)
