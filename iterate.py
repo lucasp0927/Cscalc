@@ -30,13 +30,13 @@ def creat_matrix_file(input,output,ef):
 def freq_data(input,ef):
     p = Pulse(input,ef)
     M = p.P - np.identity(p.N)
-    p.freq_plot(1e3,100)
+    p.freq_plot(5e4,100)
     p.file_out.close()
     
 if __name__ == '__main__':
     input_name = sys.argv[1]
     base_name = str.split(sys.argv[1],'.')[0]
-    factor = [2,3,4,5,6,7,8,9,10,100,500,1000]
+    factor = [1,2,3,4,5,6,7,8,9,10,100]
     ef = ElectricField()
     for f in factor:
         ef.setfactor(f)

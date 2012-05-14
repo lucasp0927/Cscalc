@@ -22,7 +22,7 @@ class ElectricField(object):
         
     def setfactor(self,f):
         self.factor = float(f)
-        self.maxima = 1e5*np.sqrt(self.factor)
+        self.maxima = 1e6*np.sqrt(self.factor)
         self.sigma = 20e-15
 
     def envelope(self,t):

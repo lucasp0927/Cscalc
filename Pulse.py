@@ -86,6 +86,7 @@ class Pulse(object):
             for j in xrange(3):           # make this more elegent
                 for k in self.group[j]:
                     data[j][i+i+1] += np.real(state[self.ij2idx(k,k)])
+
         plt.figure(1)
         fig = plt.subplot(1,1,1)
         plt.title("test")
@@ -110,8 +111,8 @@ class Pulse(object):
         state = np.zeros(self.N,complex)
         start = 1
         for i in self.group[start]:
-            state[self.ij2idx(i,i)] = 1.0/len(self.group[start])        
-        for t in enumerate(job):
+            state[self.ij2idx(i,i)] = 1.0/len(self.group[start])
+        for t in job:
             # sys.stdout.write('%s\r' % t[0])
             # sys.stdout.flush()
             #print t[0]
@@ -125,16 +126,17 @@ class Pulse(object):
             # state1 = linalg.solve(M,self.con)
             for g in enumerate(self.group):
                 q.put([g[0],t[0],np.sum(np.real(state1[self.ii2idxv(g[1][:])]))])
-        
+
     def freq_plot(self,freq_range,number):#,pnum):
         print "plot frequency domain, total",number,"points."
         rf = self.ef.repetition_freq/(2*np.pi)
         repf = np.linspace(rf-freq_range,rf+freq_range,number)
         rept = 1.0/repf
         data = np.zeros((3,number))
-        
+
         def chunks(l, n):
             n = int(ceil(float(len(l))/float(n)))
+            l = list(enumerate(l))
             return [l[i:i+n] for i in range(0, len(l), n)]
         q = Queue()
         process = []
@@ -149,12 +151,12 @@ class Pulse(object):
                 data[d[0],d[1]] = d[2]
                 n += 1
                 sys.stdout.write('%s\r' % int(n/3))
-                sys.stdout.flush()                
+                sys.stdout.flush()
             except Queue.Empty:
                 pass
         for p in process:
             p.join()
-            
+
         for rf in enumerate(repf):
             self.file_out.write('{0:<20} {1[0]:<20} {1[1]:<20} {1[2]:<20}\n'.format(rf[1],data[:,rf[0]])) # output to log file
 
@@ -170,11 +172,17 @@ class Pulse(object):
         fig.legend(handles[::-1], labels[::-1])
         plt.savefig(self.filename)
 
+        for i in xrange(1,3):           # plot only highest level
+            fig.plot(repf,data[i],label=str(i))
+        handles, labels = fig.get_legend_handles_labels()
+        fig.legend(handles[::-1], labels[::-1])
+        plt.savefig(self.filename+"_all")
+
 if __name__ == '__main__':
     ef = ElectricField()
     p = Pulse(sys.argv[1],ef)
     M = p.P - np.identity(p.N)
     #p.time_plot(1.67e-8,100)
-    p.freq_plot(2e3,100)
+    p.freq_plot(1e6,100)
     #p.freq_plot(1e-9,2e-9,10000,20000)
     p.file_out.close()
