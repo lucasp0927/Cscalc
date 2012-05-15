@@ -113,7 +113,7 @@ class Pulse(object):
             #print t[0]
             M = np.dot(linalg.expm(self.T*(t[1]-self.cutoff)),self.P)
             
-            M = np.linalg.matrix_power(M,20000000000)
+            M = np.linalg.matrix_power(M,200000000)
             state1 = np.dot(M,state.T)
 
             # M = M - np.identity(self.N)
@@ -178,7 +178,7 @@ if __name__ == '__main__':
     ef = ElectricField()
     p = Pulse(sys.argv[1],ef)
     M = p.P - np.identity(p.N)
-    p.time_plot(50000000000,10000000)
+    p.time_plot(200000000,100000)
     #p.freq_plot(1e6,100)
     #p.freq_plot(1e-9,2e-9,10000,20000)
     p.file_out.close()

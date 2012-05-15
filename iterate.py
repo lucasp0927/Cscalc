@@ -36,7 +36,7 @@ def freq_data(input,ef):
 if __name__ == '__main__':
     input_name = sys.argv[1]
     base_name = str.split(sys.argv[1],'.')[0]
-    factor = [1,2,3,4,5,6,7,8,9,10,100,500,1000]
+    factor = [100,500,1000]
     ef = ElectricField()
     for f in factor:
         ef.setfactor(f)
