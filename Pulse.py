@@ -59,38 +59,33 @@ class Pulse(object):
         self.file_out.write("#{:-<80}\n".format(''))
         self.file_out.write("#{:<20} {:<20} {:<20} {:<20}\n".format("rep_freq(Hz)","population(0)","population(1)","population(2)"))
 
-    def time_plot(self,rep,num):
+    def time_plot(self,num,step):
         print "plot time domain, total",num,"points."
+        rep = 1.0/(self.ef.repetition_freq/(2*np.pi))
         r_t = rep - self.cutoff
-        expT = linalg.expm(self.T*r_t)
+        M = np.dot(linalg.expm(self.T*r_t),self.P)                
         start = 1
         state = np.zeros(self.N,complex)
         time_arr = []
         time = 0.0
+        stepM = np.linalg.matrix_power(M, step)        
         for i in self.group[start]:
             state[self.ij2idx(i,i)] = 1.0/len(self.group[start])
-        data = np.zeros((3,num+num))
-        for i in xrange(num):
+        data = np.zeros((3,num/step))
+        for i in xrange(0,num,step):
             sys.stdout.write('%s\r' % i)
             sys.stdout.flush()
-            state = np.dot(self.P,state.T)
-            time += self.cutoff
+            state = np.dot(stepM,state.T)
+            time += rep*step
             time_arr.append(time)
-            for j in xrange(3):           # make this more elegent
+            for j in xrange(3):      # make this more elegent
                 for k in self.group[j]:
-                    data[j][i+i] += np.real(state[self.ij2idx(k,k)]) # i+i is slightly faster than i*2
-            state = np.dot(expT,state.T)
-            #print state
-            time += r_t
-            time_arr.append(time)
-            for j in xrange(3):           # make this more elegent
-                for k in self.group[j]:
-                    data[j][i+i+1] += np.real(state[self.ij2idx(k,k)])
+                    data[j][i/step] += np.real(state[self.ij2idx(k,k)]) # i+i is slightly faster than i*2
 
         plt.figure(1)
         fig = plt.subplot(1,1,1)
         plt.title("test")
-        plt.ylim(0,1)
+        plt.ylim(-0.1,1.1)
         plt.xlabel('time')
         plt.ylabel('population')
         for i in xrange(3):
@@ -117,8 +112,8 @@ class Pulse(object):
             # sys.stdout.flush()
             #print t[0]
             M = np.dot(linalg.expm(self.T*(t[1]-self.cutoff)),self.P)
-
-            M = np.linalg.matrix_power(M,200000)
+            
+            M = np.linalg.matrix_power(M,20000000000)
             state1 = np.dot(M,state.T)
 
             # M = M - np.identity(self.N)
@@ -177,12 +172,13 @@ class Pulse(object):
         handles, labels = fig.get_legend_handles_labels()
         fig.legend(handles[::-1], labels[::-1])
         plt.savefig(self.filename+"_all")
-
+        plt.clf()
+       
 if __name__ == '__main__':
     ef = ElectricField()
     p = Pulse(sys.argv[1],ef)
     M = p.P - np.identity(p.N)
-    #p.time_plot(1.67e-8,100)
-    p.freq_plot(1e6,100)
+    p.time_plot(50000000000,10000000)
+    #p.freq_plot(1e6,100)
     #p.freq_plot(1e-9,2e-9,10000,20000)
     p.file_out.close()
