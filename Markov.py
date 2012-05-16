@@ -9,8 +9,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 import time
 import pickle
 #from scipy.interpolate import interp1d,UnivariateSpline
-#HBAR = 1.05457148e-34
-HBAR = 1.0
+HBAR = 1.05457148e-34
+#HBAR = 1.0
 
 class Markov(object):
     """

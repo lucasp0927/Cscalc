@@ -157,6 +157,17 @@ class Pulse(object):
         plt.clf()
         self.file_out.close()
         
+    def matrix_vector_power(self,M,v,n):
+        ###
+        #find closest log 2
+        ###
+        new_n = np.ceil(np.log2(n))
+        part = np.floor(np.log2(self.N/np.log(2)))
+        partM = np.linalg.matrix_power(M,int(2**(new_n-part)))
+        for i in range(int(2**part)):
+            v = np.dot(partM,v.T)
+        return v
+
     def plot_worker(self,q,job):
         state = np.zeros(self.N,complex)
         start = 1
@@ -164,12 +175,12 @@ class Pulse(object):
             state[self.ij2idx(i,i)] = 1.0/len(self.group[start])
         for t in job:
             M = np.dot(linalg.expm(self.T*(t[1]-self.cutoff)),self.P)
-            # M = np.linalg.matrix_power(M,20000000000)
-            # state1 = np.dot(M,state.T)
-
-            M = M - np.identity(self.N)
-            M[-1,...] = self.lastrow
-            state1 = linalg.solve(M,self.con)
+            # M = np.linalg.matrix_power(M,200000)
+            # state1 = np.dot(M,state.T)            
+            state1 = self.matrix_vector_power(M,state.T,2**17)
+            # M = M - np.identity(self.N)
+            # M[-1,...] = self.lastrow
+            # state1 = linalg.solve(M,self.con)
             for g in enumerate(self.group):
                 q.put([g[0],t[0],np.sum(np.real(state1[self.ii2idxv(g[1][:])]))])
 
@@ -178,7 +189,7 @@ if __name__ == '__main__':
     ef = ElectricField()
     p = Pulse(sys.argv[1],ef)
     M = p.P - np.identity(p.N)
-    p.time_plot(20000000000,100000000)
+    p.time_plot(200000,10000)
     #p.freq_plot(1e6,100)
     #p.freq_plot(1e-9,2e-9,10000,20000)
 
