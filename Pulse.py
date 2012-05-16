@@ -17,7 +17,7 @@ class Pulse(object):
         """
         """
         self.filename =str.split(file_in,'.')[0]+"_freq"
-        self.file_out=open(str.split(file_in,'.')[0]+"_freq.dat","w")
+        self.file_out = ''
         self.parameter = pickle.load( open( file_in, "rb" ) )
         self.T = self.parameter['T']
         self.P = self.parameter['P']
@@ -34,7 +34,7 @@ class Pulse(object):
         for i in p2:
             self.lastrow[i] = 1.0
         self.ii2idxv = np.vectorize(self.ii2idx)
-        self.dump_header()
+
 
     def ij2idx(self,i,j):
         """
@@ -52,10 +52,10 @@ class Pulse(object):
     def dump_header(self,):
         self.file_out.write("#carrier freq: "+str(self.ef.carrier_freq)+" rad\n")
         self.file_out.write("#centeral repetitoin freq: "+str(self.ef.repetition_freq)+" rad\n")
-        self.file_out.write("#sigma: "+str(self.ef.sigma)+"\n")
-        self.file_out.write("#maxima: "+str(self.ef.maxima)+"\n")
-        self.file_out.write("#average power: "+str(self.ef.calpower())+"\n")
-        self.file_out.write("#factor: "+str(self.ef.factor)+"\n")
+        self.file_out.write("#sigma: "+str(self.parameter['sigma'])+"\n")
+        self.file_out.write("#maxima: "+str(self.parameter['maxima'])+"\n")
+        self.file_out.write("#average power: "+str(self.parameter['power'])+"\n")
+        self.file_out.write("#factor: "+str(self.parameter['factor'])+"\n")
         self.file_out.write("#{:-<80}\n".format(''))
         self.file_out.write("#{:<20} {:<20} {:<20} {:<20}\n".format("rep_freq(Hz)","population(0)","population(1)","population(2)"))
 
@@ -102,27 +102,9 @@ class Pulse(object):
     #     else:
     #         return True
 
-    def plot_worker(self,q,job):
-        state = np.zeros(self.N,complex)
-        start = 1
-        for i in self.group[start]:
-            state[self.ij2idx(i,i)] = 1.0/len(self.group[start])
-        for t in job:
-            # sys.stdout.write('%s\r' % t[0])
-            # sys.stdout.flush()
-            #print t[0]
-            M = np.dot(linalg.expm(self.T*(t[1]-self.cutoff)),self.P)
-            
-            M = np.linalg.matrix_power(M,200000000)
-            state1 = np.dot(M,state.T)
-
-            # M = M - np.identity(self.N)
-            # M[-1,...] = self.lastrow
-            # state1 = linalg.solve(M,self.con)
-            for g in enumerate(self.group):
-                q.put([g[0],t[0],np.sum(np.real(state1[self.ii2idxv(g[1][:])]))])
-
-    def freq_plot(self,freq_range,number):#,pnum):
+    def freq_plot(self,freq_range,number):
+        self.file_out=open(self.filename+".dat","w")
+        self.dump_header()        
         print "plot frequency domain, total",number,"points."
         rf = self.ef.repetition_freq/(2*np.pi)
         repf = np.linspace(rf-freq_range,rf+freq_range,number)
@@ -173,12 +155,30 @@ class Pulse(object):
         fig.legend(handles[::-1], labels[::-1])
         plt.savefig(self.filename+"_all")
         plt.clf()
+        self.file_out.close()
+        
+    def plot_worker(self,q,job):
+        state = np.zeros(self.N,complex)
+        start = 1
+        for i in self.group[start]:
+            state[self.ij2idx(i,i)] = 1.0/len(self.group[start])
+        for t in job:
+            M = np.dot(linalg.expm(self.T*(t[1]-self.cutoff)),self.P)
+            # M = np.linalg.matrix_power(M,20000000000)
+            # state1 = np.dot(M,state.T)
+
+            M = M - np.identity(self.N)
+            M[-1,...] = self.lastrow
+            state1 = linalg.solve(M,self.con)
+            for g in enumerate(self.group):
+                q.put([g[0],t[0],np.sum(np.real(state1[self.ii2idxv(g[1][:])]))])
+
        
 if __name__ == '__main__':
     ef = ElectricField()
     p = Pulse(sys.argv[1],ef)
     M = p.P - np.identity(p.N)
-    p.time_plot(200000000,100000)
+    p.time_plot(20000000000,100000000)
     #p.freq_plot(1e6,100)
     #p.freq_plot(1e-9,2e-9,10000,20000)
-    p.file_out.close()
+

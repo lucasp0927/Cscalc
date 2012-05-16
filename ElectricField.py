@@ -50,14 +50,14 @@ class ElectricField(object):
         ylabel('|Y(freq)|')
 
     def calpower(self,):
-        return '{:e}'.format(8.85e-12/2*integrate.romberg(lambda x:(self.envelope(x)*np.sin(self.carrier_freq*x))**2,0,self.cutoff,divmax=20)/(2*np.pi/self.repetition_freq))+"w/m^2"
+        return '{:e}'.format(3e8*8.85e-12/2*integrate.romberg(lambda x:(self.envelope(x)*np.sin(self.carrier_freq*x))**2,0,self.cutoff,divmax=20)/(2*np.pi/self.repetition_freq))+"w/m^2"
     
     def check(self,):
         print "rabi frequency area: "
         print 4e5*integrate.quad(self.envelope,0,self.cutoff)[0] #4e5 is dipole moment / hbar
         print "average power:"
         print self.calpower()
-        print str(8.85e-12/4*integrate.romberg(lambda x:(self.envelope(x))**2,0,self.cutoff)/(2*np.pi/self.repetition_freq))+"w/m^2"        
+        print str(3e8*8.85e-12/4*integrate.romberg(lambda x:(self.envelope(x))**2,0,self.cutoff)/(2*np.pi/self.repetition_freq))+"w/m^2"        
         Ts = self.cutoff/500.0
         x = np.arange(0, self.cutoff, Ts)
         env_vec = np.vectorize(self.envelope)

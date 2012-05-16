@@ -9,8 +9,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 import time
 import pickle
 #from scipy.interpolate import interp1d,UnivariateSpline
-HBAR = 1.05457148e-34
-#HBAR = 1.0
+#HBAR = 1.05457148e-34
+HBAR = 1.0
 
 class Markov(object):
     """
@@ -151,6 +151,10 @@ class Markov(object):
         data['n'] = self.n
         data['N'] = self.N
         data['group'] = self.group
+        data['power'] = self.EField.calpower()
+        data['sigma'] = self.EField.sigma
+        data['maxima'] = self.EField.maxima
+        data['factor'] = self.EField.factor        
         pickle.dump( data, open( self.file_out+".p", "wb" ) )
         
 if __name__ == '__main__':
