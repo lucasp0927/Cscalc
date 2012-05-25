@@ -73,14 +73,14 @@ class Pulse(object):
             state[self.ij2idx(i,i)] = 1.0/len(self.group[start])
         data = np.zeros((3,num/step))
         for i in xrange(0,num,step):
+            for j in xrange(3):      # make this more elegent
+                for k in self.group[j]:
+                    data[j][i/step] += np.real(state[self.ij2idx(k,k)]) # i+i is slightly faster than i*2
             sys.stdout.write('%s\r' % i)
             sys.stdout.flush()
             state = np.dot(stepM,state.T)
             time += rep*step
             time_arr.append(time)
-            for j in xrange(3):      # make this more elegent
-                for k in self.group[j]:
-                    data[j][i/step] += np.real(state[self.ij2idx(k,k)]) # i+i is slightly faster than i*2
 
         plt.figure(1)
         fig = plt.subplot(1,1,1)
@@ -177,7 +177,7 @@ class Pulse(object):
             M = np.dot(linalg.expm(self.T*(t[1]-self.cutoff)),self.P)
             # M = np.linalg.matrix_power(M,200000)
             # state1 = np.dot(M,state.T)            
-            state1 = self.matrix_vector_power(M,state.T,2**17)
+            state1 = self.matrix_vector_power(M,state.T,2**21)
             # M = M - np.identity(self.N)
             # M[-1,...] = self.lastrow
             # state1 = linalg.solve(M,self.con)
@@ -189,7 +189,7 @@ if __name__ == '__main__':
     ef = ElectricField()
     p = Pulse(sys.argv[1],ef)
     M = p.P - np.identity(p.N)
-    p.time_plot(200000,10000)
+    p.time_plot(1000000,1000)
     #p.freq_plot(1e6,100)
     #p.freq_plot(1e-9,2e-9,10000,20000)
 

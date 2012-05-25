@@ -8,9 +8,11 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import time
 import pickle
+from ctypes import *
+
 #from scipy.interpolate import interp1d,UnivariateSpline
-HBAR = 1.05457148e-34
-#HBAR = 1.0
+#HBAR = 1.05457148e-34
+HBAR = 1.0
 
 class Markov(object):
     """
@@ -18,6 +20,7 @@ class Markov(object):
     def __init__(self,file_in,file_out,ef):
         """
         """
+        self.libcumtrapz = CDLL("./cumtrapz/src/obj/libcumtrapz.so")    
         self.file_out = file_out
         self.pp = PdfPages(self.file_out+".pdf")        
         dictf = open(file_in,'r')
@@ -35,6 +38,7 @@ class Markov(object):
         self.smpnum = self.EField.sample
         self.cutoff = self.EField.cutoff
         self.tsample = np.linspace(0,self.EField.cutoff,self.smpnum)
+        self.dt = self.tsample[1]-self.tsample[0]
         self.Dfunction = np.empty((self.N,self.N,self.smpnum),complex)
         self.DfunctionTemp =[] #np.empty((self.N,self.N,self.smpnum),complex)
         self.order = 0
@@ -117,6 +121,29 @@ class Markov(object):
         now = self.Dfunction[...,-1]
         return linalg.norm(now-last)
     #print "difference norm %f" %linalg.norm(now-last)
+
+    def addOrder2(self):
+        last = self.Dfunction[...,-1]
+        self.DfunctionTemp = np.empty((self.N,self.N,self.smpnum),complex)                
+        #self.DfunctionTemp = np.empty((self.N,self.N,self.smpnum),complex)        
+        for i in xrange(self.smpnum):
+            self.DfunctionTemp[...,i] = np.dot(self.T+self.D*self.EField.envelope(self.tsample[i]),self.Dfunction[...,i])
+        self.Dfunction = self.DfunctionTemp
+        del self.DfunctionTemp
+        del self.T
+        del self.D
+        gc.collect()                    # clean up memory
+        
+        self.ctype_cumtrapz()
+        # self.Dfunction = integrate.cumtrapz(self.DfunctionTemp,self.tsample)
+        # self.Dfunction = np.concatenate((np.zeros((self.N,self.N,1),complex),self.Dfunction),axis=-1)
+        # for i in xrange(self.N):
+        #     self.Dfunction[i,i,:] += np.ones(self.smpnum,complex)
+            
+        self.order += 1
+        now = self.Dfunction[...,-1]
+        return linalg.norm(now-last)
+    #print "difference norm %f" %linalg.norm(now-last)    
         
     def plotGraph(self,title=""):
         start = 0
@@ -157,6 +184,24 @@ class Markov(object):
         data['factor'] = self.EField.factor        
         pickle.dump( data, open( self.file_out+".p", "wb" ) )
         
+    def ctype_cumtrapz(self):
+        """
+        Only for square matrix!!
+        """
+        #result = (c_double*(2*N**2))()
+        self.libcumtrapz.cumtrapz.restype = None
+        self.libcumtrapz.cumtrapz.argtypes = [np.ctypeslib.ndpointer(c_double),
+                c_double,
+                c_int,
+                c_int]     
+                #        self.libcumtrapz.cumtrapz(self.Dfunction.ctypes.data_as(POINTER(c_double)),c_double(self.dt),self.N,self.smpnum)
+        self.Dfunction = self.Dfunction.view('float64')
+        self.libcumtrapz.cumtrapz(self.Dfunction,self.dt,self.N,self.smpnum)
+        self.Dfunction = self.Dfunction.view('complex')        
+        # C = np.frombuffer(result, dtype='complex', count=N**2)
+        # C.shape = (N,N)
+        # return C
+    
 if __name__ == '__main__':
     ef = ElectricField()
     markov = Markov(sys.argv[1],sys.argv[2],ef)
@@ -167,7 +212,7 @@ if __name__ == '__main__':
         print "-------------------------"
         print "order ",markov.order+1
         t1 = time.time()
-        norm = markov.addOrder()
+        norm = markov.addOrder2()
         print "difference norm %e" %norm        
         t2 = time.time()
         print 'took %0.3f ms' % ((t2-t1)*1000.0)

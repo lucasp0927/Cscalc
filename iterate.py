@@ -5,6 +5,7 @@ from Markov import Markov
 import sys
 import time
 import numpy as np
+import argparse
 
 def creat_matrix_file(input,output,ef):
     markov = Markov(input,output,ef)
@@ -15,7 +16,7 @@ def creat_matrix_file(input,output,ef):
         print "-------------------------"
         print "order ",markov.order+1
         t1 = time.time()
-        norm = markov.addOrder()
+        norm = markov.addOrder2()
         print "difference norm %e" %norm        
         t2 = time.time()
         print 'took %0.3f ms' % ((t2-t1)*1000.0)
@@ -34,12 +35,20 @@ def freq_data(input,ef):
     p.file_out.close()
     
 if __name__ == '__main__':
-    input_name = sys.argv[1]
-    base_name = str.split(sys.argv[1],'.')[0]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("name", type=str,help="calculate")
+    parser.add_argument("-m", "--matrix", action="store_true",help="calculate transition matrix file")
+    parser.add_argument("-f", "--freq", action="store_true",help="plot frequency domain")    
+    args = parser.parse_args()
+    input_name = args.name
+    base_name = str.split(args.name,'.')[0]
     factor = [1,]
     ef = ElectricField()
+    
     for f in factor:
         ef.setfactor(f)
         print 'factor',f
-        #creat_matrix_file(input_name,base_name+str(f),ef)
-        freq_data(base_name+str(f)+".p",ef)
+        if args.matrix:
+            creat_matrix_file(input_name,base_name+str(f),ef)
+        if args.freq:
+            freq_data(base_name+str(f)+".p",ef)

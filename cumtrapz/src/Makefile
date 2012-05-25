@@ -10,11 +10,11 @@ GCC       := g++
 #NVFLAGS_SHARE =-arch sm_21 -shared -Xcompiler -fpic -lcublas -L/usr/share/cuda-sdk/C/lib --compiler-bindir=gcc -m64 --compiler-options '-O3 -fPIC'
 FLAGS_SHARE =-shared -O3 -fPIC -lm -fopenmp
 
-all: libmatrixMul.so
+all: libcumtrapz.so
 
 
-libmatrixMul.so: matrixMul.cpp
-	$(GCC) $(FLAGS_SHARE) -o $(OBJDIR)/libmatrixMul.so matrixMul.cpp
+libcumtrapz.so: cumtrapz.cpp
+	$(GCC) $(FLAGS_SHARE) -o $(OBJDIR)/libcumtrapz.so cumtrapz.cpp
 
 clean:  tidy
 	rm $(BINDIR)/* $(OBJDIR)/*

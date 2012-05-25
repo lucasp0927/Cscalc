@@ -6,7 +6,7 @@
 /* extern "C" */
 /* void deviceVerify(); */
 extern "C"
-void zdot(double* A,double* B,int N,double* result);
+void cumtrapz(double* A,double dt,int N,int num);
 /* extern "C" */
 /* void cdot(float* A,float* B,int N,float* result); */
 #endif //#ifndef _MATRIXMUL_H_
