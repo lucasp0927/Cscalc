@@ -1,6 +1,11 @@
 #include "cumtrapz.h"
 
+int inline index(int i,int j,int k,int N,int num)
+{
+  return 2*k+N*2*num*j+2*num*i;
+}
 
+  
 void cumtrapz(double* A,double dt,int N,int num)
 {
 // # pragma omp parallel for
@@ -10,30 +15,36 @@ void cumtrapz(double* A,double dt,int N,int num)
 //     }
   // real part
   double tmp[num];
-  for (int i = 0; i < N; ++i)
+  int i;
+  int j;
+# pragma omp parallel for  \
+  private(i,j,tmp)  
+  for (i = 0; i < N; ++i)
     {
-      for (int j = 0; j < N; ++j)
+      for (j = 0; j < N; ++j)
         {
           if (i==j)
             tmp[0] = 1.0;
           else
             tmp[0] = 0.0;
           for (int k = 1; k < num; ++k)
-            tmp[k] = tmp[k-1] + (A[(k*N*N+N*j+i)*2]+A[(N*N*(k-1)+N*j+i)*2])*dt/2.0;
+            tmp[k] = tmp[k-1] + (A[index(i,j,k,N,num)]+A[index(i,j,k-1,N,num)])*dt/2.0;
           for (int k = 0; k < num; ++k)
-            A[(k*N*N+N*j+i)*2] =tmp[k];     
+            A[index(i,j,k,N,num)] =tmp[k];     
         }
     }
   // imag part
-  for (int i = 0; i < N; ++i)
+# pragma omp parallel for  \
+  private(i,j,tmp)    
+  for (i = 0; i < N; ++i)
     {
-      for (int j = 0; j < N; ++j)
+      for (j = 0; j < N; ++j)
         {
           tmp[0] = 0.0;
           for (int k = 1; k < num; ++k)
-            tmp[k] = tmp[k-1] + (A[(k*N*N+N*j+i)*2+1]+A[((k-1)*N*N+N*j+i)*2+1])*dt/2.0;
+            tmp[k] = tmp[k-1] + (A[index(i,j,k,N,num)+1]+A[index(i,j,k-1,N,num)+1])*dt/2.0;
           for (int k = 0; k < num; ++k)
-            A[(k*N*N+N*j+i)*2+1] =tmp[k];     
+            A[index(i,j,k,N,num)+1] =tmp[k];     
         }
     }  
 }

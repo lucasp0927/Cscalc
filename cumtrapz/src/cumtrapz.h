@@ -7,6 +7,7 @@
 /* void deviceVerify(); */
 extern "C"
 void cumtrapz(double* A,double dt,int N,int num);
+int inline index(int i,int j,int k);
 /* extern "C" */
 /* void cdot(float* A,float* B,int N,float* result); */
 #endif //#ifndef _MATRIXMUL_H_

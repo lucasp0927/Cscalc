@@ -9,10 +9,11 @@ from matplotlib.backends.backend_pdf import PdfPages
 import time
 import pickle
 from ctypes import *
+from copy import copy
 
 #from scipy.interpolate import interp1d,UnivariateSpline
-#HBAR = 1.05457148e-34
-HBAR = 1.0
+HBAR = 1.05457148e-34
+#HBAR = 1.0
 
 class Markov(object):
     """
@@ -20,9 +21,9 @@ class Markov(object):
     def __init__(self,file_in,file_out,ef):
         """
         """
-        self.libcumtrapz = CDLL("./cumtrapz/src/obj/libcumtrapz.so")    
+        self.libcumtrapz = CDLL("./cumtrapz/src/obj/libcumtrapz.so")
         self.file_out = file_out
-        self.pp = PdfPages(self.file_out+".pdf")        
+        self.pp = PdfPages(self.file_out+".pdf")
         dictf = open(file_in,'r')
         self.parameter = eval(dictf.read())
         self.omega = self.parameter['omega']
@@ -59,14 +60,14 @@ class Markov(object):
             print "error"
         if i in self.group[0]:
             if j in self.group[0]:
-                return self.omega[i]-self.omega[j]                
+                return self.omega[i]-self.omega[j]
             else:
                 return self.omega[i]-self.omega[j]-self.EField.carrier_freq
         else:
             return self.omega[i]-self.omega[j]
 
     def prepareT(self):
-        self.T = np.zeros((self.N,self.N),complex) # time independent part d rho/ dt = T rho        
+        self.T = np.zeros((self.N,self.N),complex) # time independent part d rho/ dt = T rho
         for i in xrange(self.n):
             for j in xrange(i,self.n):
                 for k in self.decoherence[i][j]:
@@ -83,7 +84,7 @@ class Markov(object):
                      self.T[self.ij2idx(j,i)][self.ij2idx(j,i)]+= 1.0j*self.rotate_omega(i,j)
 
     def prepareD(self):
-        self.D = np.zeros((self.N,self.N),complex) # time independent part d rho/ dt = T rho        
+        self.D = np.zeros((self.N,self.N),complex) # time independent part d rho/ dt = T rho
         for i in xrange(self.n):
             for j in xrange(self.n):
                 for k in xrange(self.n):
@@ -94,12 +95,12 @@ class Markov(object):
         print "zero order"
         for i in enumerate(self.tsample):
             sys.stdout.write('%s\r' % i[0])
-            sys.stdout.flush()            
+            sys.stdout.flush()
             self.Dfunction[:,:,i[0]]=linalg.expm(self.T*i[1],15)
 
     def addOrder(self):
         last = self.Dfunction[...,-1]
-        self.DfunctionTemp = np.empty((self.N,self.N,self.smpnum),complex)        
+        self.DfunctionTemp = np.empty((self.N,self.N,self.smpnum),complex)
         for i in xrange(self.smpnum):
             self.DfunctionTemp[...,i] = np.dot(self.T+self.D*self.EField.envelope(self.tsample[i]),self.Dfunction[...,i])
         # self.Dfunction = []
@@ -110,10 +111,10 @@ class Markov(object):
         del self.D
         gc.collect()                    # clean up memory
         #should rewrite cumtrapz with C to use less memory
-        #self.Dfunction = np.zeros((self.N,self.N,self.smpnum),complex)        
+        #self.Dfunction = np.zeros((self.N,self.N,self.smpnum),complex)
         self.Dfunction = integrate.cumtrapz(self.DfunctionTemp,self.tsample)
         del self.DfunctionTemp
-        gc.collect()        
+        gc.collect()
         self.Dfunction = np.concatenate((np.zeros((self.N,self.N,1),complex),self.Dfunction),axis=-1)
         for i in xrange(self.N):
             self.Dfunction[i,i,:] += np.ones(self.smpnum,complex)
@@ -124,27 +125,27 @@ class Markov(object):
 
     def addOrder2(self):
         last = self.Dfunction[...,-1]
-        self.DfunctionTemp = np.empty((self.N,self.N,self.smpnum),complex)                
-        #self.DfunctionTemp = np.empty((self.N,self.N,self.smpnum),complex)        
+        self.DfunctionTemp = np.empty((self.N,self.N,self.smpnum),complex)
+        #self.DfunctionTemp = np.empty((self.N,self.N,self.smpnum),complex)
         for i in xrange(self.smpnum):
             self.DfunctionTemp[...,i] = np.dot(self.T+self.D*self.EField.envelope(self.tsample[i]),self.Dfunction[...,i])
-        self.Dfunction = self.DfunctionTemp
+
+        self.Dfunction = copy(self.DfunctionTemp)
         del self.DfunctionTemp
         del self.T
         del self.D
         gc.collect()                    # clean up memory
-        
+
         self.ctype_cumtrapz()
         # self.Dfunction = integrate.cumtrapz(self.DfunctionTemp,self.tsample)
         # self.Dfunction = np.concatenate((np.zeros((self.N,self.N,1),complex),self.Dfunction),axis=-1)
         # for i in xrange(self.N):
         #     self.Dfunction[i,i,:] += np.ones(self.smpnum,complex)
-            
         self.order += 1
         now = self.Dfunction[...,-1]
         return linalg.norm(now-last)
-    #print "difference norm %f" %linalg.norm(now-last)    
-        
+    #print "difference norm %f" %linalg.norm(now-last)
+
     def plotGraph(self,title=""):
         start = 0
         state = np.zeros(self.N,complex)
@@ -156,7 +157,7 @@ class Markov(object):
             for j in xrange(3):           # make this more elegent
                 for k in self.group[j]:
                     data[j][i] += np.real(state1[self.ij2idx(k,k)])
-        plt.figure(1)                    
+        plt.figure(1)
         fig = plt.subplot(1,1,1)
         plt.title(title)
         plt.ylim(0,1)
@@ -169,7 +170,7 @@ class Markov(object):
         plt.savefig(self.pp,format='pdf')
         plt.clf()
         #show()
-        
+
     def write(self):
         data={}
         data['T'] = self.T
@@ -181,46 +182,62 @@ class Markov(object):
         data['power'] = self.EField.calpower()
         data['sigma'] = self.EField.sigma
         data['maxima'] = self.EField.maxima
-        data['factor'] = self.EField.factor        
+        data['factor'] = self.EField.factor
         pickle.dump( data, open( self.file_out+".p", "wb" ) )
-        
+
     def ctype_cumtrapz(self):
-        """
-        Only for square matrix!!
-        """
         #result = (c_double*(2*N**2))()
         self.libcumtrapz.cumtrapz.restype = None
         self.libcumtrapz.cumtrapz.argtypes = [np.ctypeslib.ndpointer(c_double),
                 c_double,
                 c_int,
-                c_int]     
+                c_int]
                 #        self.libcumtrapz.cumtrapz(self.Dfunction.ctypes.data_as(POINTER(c_double)),c_double(self.dt),self.N,self.smpnum)
+        # a = np.array([[[1+1j,2+2j],[1+1j,1+1j]],
+        #               [[0+0j,0+0j],[0+0j,0+0j]],
+        #               [[1+2j,3+4j],[0+0j,0+0j]]
+        #     ])
+        # a = a.view('float64')
+        # self.libcumtrapz.cumtrapz(a,0.1,2,3)
+        # a = a.view('complex')
+        # print a
+        # a = np.array([[[1+1j,2+2j],[1+1j,1+1j]],
+        #               [[0+0j,0+0j],[0+0j,0+0j]],
+        #               [[1+2j,3+4j],[0+0j,0+0j]]
+        #     ])
+
+        # ts = np.array([0.0,0.1,0.2])
+        # c = integrate.cumtrapz(a,ts)
+        # print np.shape(c)
+        # c = np.concatenate((np.zeros((2,2,1),complex),c),axis=-1)
+        # for i in xrange(2):
+        #     c[i,i,:] += np.ones(3,complex)
+        # print c
         self.Dfunction = self.Dfunction.view('float64')
         self.libcumtrapz.cumtrapz(self.Dfunction,self.dt,self.N,self.smpnum)
-        self.Dfunction = self.Dfunction.view('complex')        
-        # C = np.frombuffer(result, dtype='complex', count=N**2)
-        # C.shape = (N,N)
-        # return C
-    
+        self.Dfunction = self.Dfunction.view('complex')
+
+
 if __name__ == '__main__':
     ef = ElectricField()
     markov = Markov(sys.argv[1],sys.argv[2],ef)
-    markov.prepareT()
-    markov.prepareD()
-    markov.zeroOrder()
-    for i in xrange(50):
-        print "-------------------------"
-        print "order ",markov.order+1
-        t1 = time.time()
-        norm = markov.addOrder2()
-        print "difference norm %e" %norm        
-        t2 = time.time()
-        print 'took %0.3f ms' % ((t2-t1)*1000.0)
-        markov.prepareT()
-        markov.prepareD()        
-        #markov.plotGraph(title=str(i)+"th order")
-        if norm == 0:
-            break
-    markov.pp.close()
-    markov.write()
-    print "See the output PDF file to check if purturbation converge."
+    # markov.prepareT()
+    # markov.prepareD()
+    # markov.zeroOrder()
+    markov.ctype_cumtrapz()
+    # for i in xrange(50):
+    #     print "-------------------------"
+    #     print "order ",markov.order+1
+    #     t1 = time.time()
+    #     norm = markov.addOrder2()
+    #     print "difference norm %e" %norm
+    #     t2 = time.time()
+    #     print 'took %0.3f ms' % ((t2-t1)*1000.0)
+    #     markov.prepareT()
+    #     markov.prepareD()
+    #     #markov.plotGraph(title=str(i)+"th order")
+    #     if norm == 0:
+    #         break
+    # markov.pp.close()
+    # markov.write()
+    # print "See the output PDF file to check if purturbation converge."
