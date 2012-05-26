@@ -129,7 +129,7 @@ class Pulse(object):
                 n += 1
                 sys.stdout.write('%s\r' % int(n/3))
                 sys.stdout.flush()
-            except Queue.Empty:
+            except:
                 pass
         for p in process:
             p.join()

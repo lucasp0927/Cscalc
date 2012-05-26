@@ -12,8 +12,8 @@ from ctypes import *
 from copy import copy
 
 #from scipy.interpolate import interp1d,UnivariateSpline
-HBAR = 1.05457148e-34
-#HBAR = 1.0
+#HBAR = 1.05457148e-34
+HBAR = 1.0
 
 class Markov(object):
     """
@@ -40,7 +40,7 @@ class Markov(object):
         self.cutoff = self.EField.cutoff
         self.tsample = np.linspace(0,self.EField.cutoff,self.smpnum)
         self.dt = self.tsample[1]-self.tsample[0]
-        self.Dfunction = np.empty((self.N,self.N,self.smpnum),complex)
+        self.Dfunction = np.empty((self.smpnum,self.N,self.N),complex)
         self.DfunctionTemp =[] #np.empty((self.N,self.N,self.smpnum),complex)
         self.order = 0
         self.parameter = {}
@@ -96,39 +96,39 @@ class Markov(object):
         for i in enumerate(self.tsample):
             sys.stdout.write('%s\r' % i[0])
             sys.stdout.flush()
-            self.Dfunction[:,:,i[0]]=linalg.expm(self.T*i[1],15)
+            self.Dfunction[i[0],:,:]=linalg.expm(self.T*i[1],15)
 
-    def addOrder(self):
-        last = self.Dfunction[...,-1]
-        self.DfunctionTemp = np.empty((self.N,self.N,self.smpnum),complex)
-        for i in xrange(self.smpnum):
-            self.DfunctionTemp[...,i] = np.dot(self.T+self.D*self.EField.envelope(self.tsample[i]),self.Dfunction[...,i])
-        # self.Dfunction = []
-        # self.T = []
-        # self.D = []
-        del self.Dfunction
-        del self.T
-        del self.D
-        gc.collect()                    # clean up memory
-        #should rewrite cumtrapz with C to use less memory
-        #self.Dfunction = np.zeros((self.N,self.N,self.smpnum),complex)
-        self.Dfunction = integrate.cumtrapz(self.DfunctionTemp,self.tsample)
-        del self.DfunctionTemp
-        gc.collect()
-        self.Dfunction = np.concatenate((np.zeros((self.N,self.N,1),complex),self.Dfunction),axis=-1)
-        for i in xrange(self.N):
-            self.Dfunction[i,i,:] += np.ones(self.smpnum,complex)
-        self.order += 1
-        now = self.Dfunction[...,-1]
-        return linalg.norm(now-last)
-    #print "difference norm %f" %linalg.norm(now-last)
+    # def addOrder(self):
+    #     last = self.Dfunction[...,-1]
+    #     self.DfunctionTemp = np.empty((self.smpnum,self.N,self.N),complex)
+    #     for i in xrange(self.smpnum):
+    #         self.DfunctionTemp[i,...] = np.dot(self.T+self.D*self.EField.envelope(self.tsample[i]),self.Dfunction[i,...])
+    #     # self.Dfunction = []
+    #     # self.T = []
+    #     # self.D = []
+    #     del self.Dfunction
+    #     del self.T
+    #     del self.D
+    #     gc.collect()                    # clean up memory
+    #     #should rewrite cumtrapz with C to use less memory
+    #     #self.Dfunction = np.zeros((self.N,self.N,self.smpnum),complex)
+    #     self.Dfunction = integrate.cumtrapz(self.DfunctionTemp,self.tsample)
+    #     del self.DfunctionTemp
+    #     gc.collect()
+    #     self.Dfunction = np.concatenate((np.zeros((self.N,self.N,1),complex),self.Dfunction),axis=-1)
+    #     for i in xrange(self.N):
+    #         self.Dfunction[i,i,:] += np.ones(self.smpnum,complex)
+    #     self.order += 1
+    #     now = self.Dfunction[...,-1]
+    #     return linalg.norm(now-last)
+    # #print "difference norm %f" %linalg.norm(now-last)
 
     def addOrder2(self):
-        last = self.Dfunction[...,-1]
-        self.DfunctionTemp = np.empty((self.N,self.N,self.smpnum),complex)
+        last = self.Dfunction[-1,...]
+        self.DfunctionTemp = np.empty((self.smpnum,self.N,self.N),complex)
         #self.DfunctionTemp = np.empty((self.N,self.N,self.smpnum),complex)
         for i in xrange(self.smpnum):
-            self.DfunctionTemp[...,i] = np.dot(self.T+self.D*self.EField.envelope(self.tsample[i]),self.Dfunction[...,i])
+            self.DfunctionTemp[i,...] = np.dot(self.T+self.D*self.EField.envelope(self.tsample[i]),self.Dfunction[i,...])
 
         self.Dfunction = copy(self.DfunctionTemp)
         del self.DfunctionTemp
@@ -142,7 +142,7 @@ class Markov(object):
         # for i in xrange(self.N):
         #     self.Dfunction[i,i,:] += np.ones(self.smpnum,complex)
         self.order += 1
-        now = self.Dfunction[...,-1]
+        now = self.Dfunction[-1,...]
         return linalg.norm(now-last)
     #print "difference norm %f" %linalg.norm(now-last)
 
@@ -153,7 +153,7 @@ class Markov(object):
             state[self.ij2idx(i,i)] = 1.0/len(self.group[start])
         data = np.zeros((3,self.smpnum))
         for i in xrange(self.smpnum):
-            state1 = np.dot(self.Dfunction[:,:,i],state.T)
+            state1 = np.dot(self.Dfunction[i,:,:],state.T)
             for j in xrange(3):           # make this more elegent
                 for k in self.group[j]:
                     data[j][i] += np.real(state1[self.ij2idx(k,k)])
@@ -174,7 +174,7 @@ class Markov(object):
     def write(self):
         data={}
         data['T'] = self.T
-        data['P'] = self.Dfunction[:,:,-1]
+        data['P'] = self.Dfunction[-1,:,:]
         data['cutoff'] = self.cutoff
         data['n'] = self.n
         data['N'] = self.N

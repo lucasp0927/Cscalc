@@ -11,14 +11,14 @@ class ElectricField(object):
         """
         """
         twopi = 2*np.pi
-        #self.carrier_freq = 2105628723506709.8 #three
+        self.carrier_freq = 2105628723506709.8 #three
         #self.carrier_freq =  2105624596584936.2 #d1 
-        self.carrier_freq = 351.72571850e12*twopi+5.170855370625e9*twopi-188.4885e6*twopi#d2
+        #self.carrier_freq = 351.72571850e12*twopi+5.170855370625e9*twopi-188.4885e6*twopi#d2
         self.repetition_freq =  57759008871.57628/10
         self.factor = 1
         self.setfactor(self.factor)        
         self.cutoff = self.sigma*10.0#where electric field start consider to be zero
-        self.sample = 40
+        self.sample = 100
         
     def setfactor(self,f):
         self.factor = float(f)
