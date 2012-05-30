@@ -12,14 +12,11 @@ ICC       := icc
 ICCFLAGS_SHARE =-shared -O3 -fPIC -fopenmp -xHost -Wall -mkl
 FLAGS_SHARE =-shared -O3 -fPIC -fopenmp -Wall
 
-all: libcumtrapz.so libzeroOrder.so
+all: libcumtrapz.so
 
 
 libcumtrapz.so: cumtrapz.cpp
 	$(ICC) $(ICCFLAGS_SHARE) -o $(OBJDIR)/libcumtrapz.so cumtrapz.cpp
-
-libzeroOrder.so: zeroOrder.cpp
-	$(GCC) $(FLAGS_SHARE) -o $(OBJDIR)/libzeroOrder.so zeroOrder.cpp
 
 clean:  tidy
 	rm $(BINDIR)/* $(OBJDIR)/*

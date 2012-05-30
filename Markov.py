@@ -4,17 +4,16 @@ import sys,gc
 from ElectricField import ElectricField
 import numpy as np
 from scipy import linalg,integrate
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
+#import matplotlib.pyplot as plt
+#from matplotlib.backends.backend_pdf import PdfPages
 import time
 import pickle
 from ctypes import *
 from copy import copy
-from  expm import *
 
 #from scipy.interpolate import interp1d,UnivariateSpline
-HBAR = 1.05457148e-34
-#HBAR = 1.0
+#HBAR = 1.05457148e-34
+HBAR = 1.0
 
 class Markov(object):
     """
@@ -23,10 +22,9 @@ class Markov(object):
         """
         """
         self.libcumtrapz = CDLL("./cumtrapz/src/obj/libcumtrapz.so")
-        self.libzeroorder = CDLL("./cumtrapz/src/obj/libzeroOrder.so")        
         self.initlibcumtrapz()
         self.file_out = file_out
-        self.pp = PdfPages(self.file_out+".pdf")
+        #self.pp = PdfPages(self.file_out+".pdf")
         dictf = open(file_in,'r')
         self.parameter = eval(dictf.read())
         self.omega = self.parameter['omega']
@@ -99,7 +97,7 @@ class Markov(object):
         for i in enumerate(self.tsample):
             sys.stdout.write('%s\r' % i[0])
             sys.stdout.flush()
-            self.Dfunction[i[0],:,:]=expm(self.T*i[1],15)
+            self.Dfunction[i[0],:,:]=linalg.expm(self.T*i[1],15)
 
     # def addOrder(self):
     #     last = self.Dfunction[...,-1]
@@ -149,29 +147,29 @@ class Markov(object):
         return linalg.norm(now-last)
     #print "difference norm %f" %linalg.norm(now-last)
 
-    def plotGraph(self,title=""):
-        start = 0
-        state = np.zeros(self.N,complex)
-        for i in self.group[start]:
-            state[self.ij2idx(i,i)] = 1.0/len(self.group[start])
-        data = np.zeros((3,self.smpnum))
-        for i in xrange(self.smpnum):
-            state1 = np.dot(self.Dfunction[i,:,:],state.T)
-            for j in xrange(3):           # make this more elegent
-                for k in self.group[j]:
-                    data[j][i] += np.real(state1[self.ij2idx(k,k)])
-        plt.figure(1)
-        fig = plt.subplot(1,1,1)
-        plt.title(title)
-        plt.ylim(0,1)
-        plt.xlabel('time')
-        plt.ylabel('population')
-        for i in xrange(3):
-            fig.plot(self.tsample,data[i],label=str(i))
-        handles, labels = fig.get_legend_handles_labels()
-        fig.legend(handles[::-1], labels[::-1])
-        plt.savefig(self.pp,format='pdf')
-        plt.clf()
+    # def plotGraph(self,title=""):
+    #     start = 0
+    #     state = np.zeros(self.N,complex)
+    #     for i in self.group[start]:
+    #         state[self.ij2idx(i,i)] = 1.0/len(self.group[start])
+    #     data = np.zeros((3,self.smpnum))
+    #     for i in xrange(self.smpnum):
+    #         state1 = np.dot(self.Dfunction[i,:,:],state.T)
+    #         for j in xrange(3):           # make this more elegent
+    #             for k in self.group[j]:
+    #                 data[j][i] += np.real(state1[self.ij2idx(k,k)])
+    #     plt.figure(1)
+    #     fig = plt.subplot(1,1,1)
+    #     plt.title(title)
+    #     plt.ylim(0,1)
+    #     plt.xlabel('time')
+    #     plt.ylabel('population')
+    #     for i in xrange(3):
+    #         fig.plot(self.tsample,data[i],label=str(i))
+    #     handles, labels = fig.get_legend_handles_labels()
+        #fig.legend(handles[::-1], labels[::-1])
+        #plt.savefig(self.pp,format='pdf')
+        #plt.clf()
         #show()
 
     def write(self):
@@ -194,8 +192,6 @@ class Markov(object):
                 c_double,
                 c_int,
                 c_int]
-    def ctype_test(self):
-        self.libzeroorder.zeroOrder()
         
     def ctype_cumtrapz(self):
         #result = (c_double*(2*N**2))()

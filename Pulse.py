@@ -4,7 +4,7 @@ import sys
 import numpy as np
 from scipy import linalg
 from ElectricField import ElectricField
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import pickle
 from multiprocessing import Process, Queue
 from math import ceil
@@ -137,24 +137,24 @@ class Pulse(object):
         for rf in enumerate(repf):
             self.file_out.write('{0:<20} {1[0]:<20} {1[1]:<20} {1[2]:<20}\n'.format(rf[1],data[:,rf[0]])) # output to log file
 
-        plt.figure(1)
-        fig = plt.subplot(1,1,1)
-        plt.title("population vs repetition rate")
-        #plt.ylim(-0.1,1.1)
-        plt.xlabel('repetition rate(Hz)')
-        plt.ylabel('population')
-        for i in xrange(0,1):           # plot only highest level
-            fig.plot(repf,data[i],label=str(i))
-        handles, labels = fig.get_legend_handles_labels()
-        fig.legend(handles[::-1], labels[::-1])
-        plt.savefig(self.filename)
+        # plt.figure(1)
+        # fig = plt.subplot(1,1,1)
+        # plt.title("population vs repetition rate")
+        # plt.xlabel('repetition rate(Hz)')
+        # plt.ylabel('population')
+        # for i in xrange(0,1):           # plot only highest level
+        #     fig.plot(repf,data[i],label=str(i))
+        # handles, labels = fig.get_legend_handles_labels()
+        # fig.legend(handles[::-1], labels[::-1])
+        # plt.savefig(self.filename)
 
-        for i in xrange(1,3):           # plot only highest level
-            fig.plot(repf,data[i],label=str(i))
-        handles, labels = fig.get_legend_handles_labels()
-        fig.legend(handles[::-1], labels[::-1])
-        plt.savefig(self.filename+"_all")
-        plt.clf()
+        # for i in xrange(1,3):           # plot only highest level
+        #     fig.plot(repf,data[i],label=str(i))
+        # handles, labels = fig.get_legend_handles_labels()
+        # fig.legend(handles[::-1], labels[::-1])
+        # plt.savefig(self.filename+"_all")
+        # plt.clf()
+        
         self.file_out.close()
         
     def matrix_vector_power(self,M,v,n):

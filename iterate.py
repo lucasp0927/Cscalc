@@ -22,16 +22,16 @@ def creat_matrix_file(input,output,ef):
         print 'took %0.3f ms' % ((t2-t1)*1000.0)
         # markov.prepareT()
         # markov.prepareD()        
-        markov.plotGraph(title=str(i)+"th order")
+        #markov.plotGraph(title=str(i)+"th order")
         if norm == 0:
             break
-    markov.pp.close()
+        #markov.pp.close()
     markov.write()
     
 def freq_data(input,ef):
     p = Pulse(input,ef)
     M = p.P - np.identity(p.N)
-    p.freq_plot(1e5,100)#better be multiple of process number
+    p.freq_plot(1e5,500)#better be multiple of process number
     p.file_out.close()
     
 if __name__ == '__main__':
@@ -42,7 +42,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     input_name = args.name
     base_name = str.split(args.name,'.')[0]
-    factor = [1,]
+    factor = [1,2,3,4,5,6,]
     ef = ElectricField()
     
     for f in factor:
