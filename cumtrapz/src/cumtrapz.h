@@ -1,5 +1,5 @@
-#ifndef _MATRIXMUL_H_
-#define _MATRIXMUL_H_
+#ifndef _CUMTRAPZ_H_
+#define _CUMTRAPZ_H_
 // Utilities and system includes
 #include <stdio.h>
 //define forward

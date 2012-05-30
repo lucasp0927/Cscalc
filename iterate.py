@@ -20,8 +20,8 @@ def creat_matrix_file(input,output,ef):
         print "difference norm %e" %norm        
         t2 = time.time()
         print 'took %0.3f ms' % ((t2-t1)*1000.0)
-        markov.prepareT()
-        markov.prepareD()        
+        # markov.prepareT()
+        # markov.prepareD()        
         markov.plotGraph(title=str(i)+"th order")
         if norm == 0:
             break

@@ -10,10 +10,11 @@ import time
 import pickle
 from ctypes import *
 from copy import copy
+from  expm import *
 
 #from scipy.interpolate import interp1d,UnivariateSpline
-#HBAR = 1.05457148e-34
-HBAR = 1.0
+HBAR = 1.05457148e-34
+#HBAR = 1.0
 
 class Markov(object):
     """
@@ -22,6 +23,8 @@ class Markov(object):
         """
         """
         self.libcumtrapz = CDLL("./cumtrapz/src/obj/libcumtrapz.so")
+        self.libzeroorder = CDLL("./cumtrapz/src/obj/libzeroOrder.so")        
+        self.initlibcumtrapz()
         self.file_out = file_out
         self.pp = PdfPages(self.file_out+".pdf")
         dictf = open(file_in,'r')
@@ -96,7 +99,7 @@ class Markov(object):
         for i in enumerate(self.tsample):
             sys.stdout.write('%s\r' % i[0])
             sys.stdout.flush()
-            self.Dfunction[i[0],:,:]=linalg.expm(self.T*i[1],15)
+            self.Dfunction[i[0],:,:]=expm(self.T*i[1],15)
 
     # def addOrder(self):
     #     last = self.Dfunction[...,-1]
@@ -132,8 +135,8 @@ class Markov(object):
 
         self.Dfunction = copy(self.DfunctionTemp)
         del self.DfunctionTemp
-        del self.T
-        del self.D
+        # del self.T
+        # del self.D
         gc.collect()                    # clean up memory
 
         self.ctype_cumtrapz()
@@ -184,35 +187,18 @@ class Markov(object):
         data['maxima'] = self.EField.maxima
         data['factor'] = self.EField.factor
         pickle.dump( data, open( self.file_out+".p", "wb" ) )
-
-    def ctype_cumtrapz(self):
-        #result = (c_double*(2*N**2))()
+        
+    def initlibcumtrapz(self):
         self.libcumtrapz.cumtrapz.restype = None
         self.libcumtrapz.cumtrapz.argtypes = [np.ctypeslib.ndpointer(c_double),
                 c_double,
                 c_int,
                 c_int]
-                #        self.libcumtrapz.cumtrapz(self.Dfunction.ctypes.data_as(POINTER(c_double)),c_double(self.dt),self.N,self.smpnum)
-        # a = np.array([[[1+1j,2+2j],[1+1j,1+1j]],
-        #               [[0+0j,0+0j],[0+0j,0+0j]],
-        #               [[1+2j,3+4j],[0+0j,0+0j]]
-        #     ])
-        # a = a.view('float64')
-        # self.libcumtrapz.cumtrapz(a,0.1,2,3)
-        # a = a.view('complex')
-        # print a
-        # a = np.array([[[1+1j,2+2j],[1+1j,1+1j]],
-        #               [[0+0j,0+0j],[0+0j,0+0j]],
-        #               [[1+2j,3+4j],[0+0j,0+0j]]
-        #     ])
-
-        # ts = np.array([0.0,0.1,0.2])
-        # c = integrate.cumtrapz(a,ts)
-        # print np.shape(c)
-        # c = np.concatenate((np.zeros((2,2,1),complex),c),axis=-1)
-        # for i in xrange(2):
-        #     c[i,i,:] += np.ones(3,complex)
-        # print c
+    def ctype_test(self):
+        self.libzeroorder.zeroOrder()
+        
+    def ctype_cumtrapz(self):
+        #result = (c_double*(2*N**2))()
         self.Dfunction = self.Dfunction.view('float64')
         self.libcumtrapz.cumtrapz(self.Dfunction,self.dt,self.N,self.smpnum)
         self.Dfunction = self.Dfunction.view('complex')
@@ -224,7 +210,7 @@ if __name__ == '__main__':
     # markov.prepareT()
     # markov.prepareD()
     # markov.zeroOrder()
-    markov.ctype_cumtrapz()
+    markov.ctype_test()
     # for i in xrange(50):
     #     print "-------------------------"
     #     print "order ",markov.order+1
