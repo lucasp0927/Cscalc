@@ -42,7 +42,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     input_name = args.name
     base_name = str.split(args.name,'.')[0]
-    factor = [1,2,3,4,5,6,]
+    factor = [1,2,3,4,5,6,7,8,9,10,100,200,300,400,500,600,700,800,900,1000]
     ef = ElectricField()
     
     for f in factor:

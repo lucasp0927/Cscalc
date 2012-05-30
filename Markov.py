@@ -12,8 +12,8 @@ from ctypes import *
 from copy import copy
 
 #from scipy.interpolate import interp1d,UnivariateSpline
-#HBAR = 1.05457148e-34
-HBAR = 1.0
+HBAR = 1.05457148e-34
+#HBAR = 1.0
 
 class Markov(object):
     """

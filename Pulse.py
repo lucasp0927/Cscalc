@@ -60,6 +60,7 @@ class Pulse(object):
         self.file_out.write("#{:<20} {:<20} {:<20} {:<20}\n".format("rep_freq(Hz)","population(0)","population(1)","population(2)"))
 
     def time_plot(self,num,step):
+        self.file_out=open(self.filename+".dat","w")
         print "plot time domain, total",num,"points."
         rep = 1.0/(self.ef.repetition_freq/(2*np.pi))
         r_t = rep - self.cutoff
@@ -82,17 +83,20 @@ class Pulse(object):
             time += rep*step
             time_arr.append(time)
 
-        plt.figure(1)
-        fig = plt.subplot(1,1,1)
-        plt.title("test")
-        plt.ylim(-0.1,1.1)
-        plt.xlabel('time')
-        plt.ylabel('population')
-        for i in xrange(3):
-            fig.plot(time_arr,data[i],label=str(i))
-        handles, labels = fig.get_legend_handles_labels()
-        fig.legend(handles[::-1], labels[::-1])
-        plt.show()
+        for t in enumerate(time_arr):
+            self.file_out.write('{0:<20} {1[0]:<20} {1[1]:<20} {1[2]:<20}\n'.format(t[1],data[:,t[0]])) # output to log file
+        self.file_out.close()
+        # plt.figure(1)
+        # fig = plt.subplot(1,1,1)
+        # plt.title("test")
+        # plt.ylim(-0.1,1.1)
+        # plt.xlabel('time')
+        # plt.ylabel('population')
+        # for i in xrange(3):
+        #     fig.plot(time_arr,data[i],label=str(i))
+        # handles, labels = fig.get_legend_handles_labels()
+        # fig.legend(handles[::-1], labels[::-1])
+        # plt.show()
 
     # def correct(self,arr):
     #     # TODO: write in better numpy way
