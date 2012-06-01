@@ -128,23 +128,23 @@ class Markov(object):
     # #print "difference norm %f" %linalg.norm(now-last)
 
     def addOrder2(self):
-        last = self.Dfunction[-1,...]
+        last = copy(self.Dfunction[-1,...])
         #self.DfunctionTemp = np.empty((self.smpnum,self.N,self.N),complex)
         #self.DfunctionTemp = np.empty((self.N,self.N,self.smpnum),complex)
         for i in xrange(self.smpnum):
-            tmp = np.dot(self.T+self.D*self.EField.envelope(self.tsample[i]),self.Dfunction[i,...])
-            self.Dfunction[i,...] = copy(tmp)
+             tmp = np.dot(self.T+self.D*self.EField.envelope(self.tsample[i]),self.Dfunction[i,...])
+             self.Dfunction[i,...] = copy(tmp)
+        #del self.DfunctionTemp
         # del self.T
         # del self.D
         #gc.collect()                    # clean up memory
-
         self.ctype_cumtrapz()
         # self.Dfunction = integrate.cumtrapz(self.DfunctionTemp,self.tsample)
         # self.Dfunction = np.concatenate((np.zeros((self.N,self.N,1),complex),self.Dfunction),axis=-1)
         # for i in xrange(self.N):
         #     self.Dfunction[i,i,:] += np.ones(self.smpnum,complex)
         self.order += 1
-        now = self.Dfunction[-1,...]
+        now = copy(self.Dfunction[-1,...])
         return linalg.norm(now-last)
     #print "difference norm %f" %linalg.norm(now-last)
 
