@@ -11,6 +11,8 @@ extern "C"
 void addorder(double* T,double* D,double* env, double* A,int N, int num,double dt);
 extern "C"
 void cumtrapz(double* A,double dt,int N,int num);
+extern "C"
+void cumtrapz_blas(double* A,double dt,int N,int num);
 int inline index(int i,int j,int k);
 /* extern "C" */
 /* void cdot(float* A,float* B,int N,float* result); */

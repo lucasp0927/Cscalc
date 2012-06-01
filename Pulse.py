@@ -171,16 +171,16 @@ class Pulse(object):
         
         self.file_out.close()
         
-    def matrix_vector_power(self,M,v,n):
-        ###
-        #find closest log 2
-        ###
-        new_n = np.ceil(np.log2(n))
-        part = np.floor(np.log2(self.N/np.log(2)))
-        partM = np.linalg.matrix_power(M,int(2**(new_n-part)))
-        for i in range(int(2**part)):
-            v = np.dot(partM,v.T)
-        return v
+    # def matrix_vector_power(self,M,v,n):
+    #     ###
+    #     #find closest log 2
+    #     ###
+    #     new_n = np.ceil(np.log2(n))
+    #     part = np.floor(np.log2(self.N/np.log(2)))
+    #     partM = np.linalg.matrix_power(M,int(2**(new_n-part)))
+    #     for i in range(int(2**part)):
+    #         v = np.dot(partM,v.T)
+    #     return v
 
     def plot_worker(self,q,job):
         state = np.zeros(self.N,complex)
@@ -189,9 +189,10 @@ class Pulse(object):
             state[self.ij2idx(i,i)] = 1.0/len(self.group[start])
         for t in job:
             M = np.dot(linalg.expm(self.T*(t[1]-self.cutoff)),self.P)
-            # M = np.linalg.matrix_power(M,200000)
-            # state1 = np.dot(M,state.T)            
-            state1 = self.matrix_vector_power(M,state.T,2**26)
+            #state1 = self.matrix_vector_power(M,state.T,2**26)
+            M = np.linalg.matrix_power(M,2**26)
+            state1 = np.dot(M,state.T)            
+            
             # M = M - np.identity(self.N)
             # M[-1,...] = self.lastrow
             # state1 = linalg.solve(M,self.con)

@@ -5,6 +5,7 @@ int inline index(int i,int j,int k,int N)
   //  return 2*k+N*2*num*j+2*num*i;
   return k*N*N*2+N*2*j+2*i;
 }
+
 void addorder(double* T,double* D,double* env, double* A,int N, int num,double dt)
 {
     typedef struct{ double re; double im; } complex16;
@@ -33,13 +34,11 @@ void cumtrapz(double* A,double dt,int N,int num)
 {
   // real part
   double tmp[num];
-  int i;
-  int j;
 # pragma omp parallel for  \
-  private(i,j,tmp)
-  for (i = 0; i < N; ++i)
+  private(tmp)
+   for (int i = 0; i < N; ++i)
     {
-      for (j = 0; j < N; ++j)
+      for (int j = 0; j < N; ++j)
         {
           if (i==j)
             tmp[0] = 1.0;
@@ -54,10 +53,10 @@ void cumtrapz(double* A,double dt,int N,int num)
     }
   // imag part
 # pragma omp parallel for  \
-  private(i,j,tmp)
-  for (i = 0; i < N; ++i)
+  private(tmp)
+  for (int i = 0; i < N; ++i)
     {
-      for (j = 0; j < N; ++j)
+      for (int j = 0; j < N; ++j)
         {
           tmp[0] = 0.0;
           tmp[1] = tmp[0] + (A[index(i,j,1,N)+1]+A[index(i,j,0,N)+1])*dt/2.0;          
@@ -67,4 +66,9 @@ void cumtrapz(double* A,double dt,int N,int num)
             A[index(i,j,k,N)+1] =tmp[k];
         }
     }
+}
+
+void cumtrapz_blas(double* A,double dt,int N,int num)
+{
+
 }
