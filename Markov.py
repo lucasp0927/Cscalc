@@ -10,6 +10,8 @@ import time
 import pickle
 from ctypes import *
 from copy import copy
+import mkl
+mkl.set_num_threads(12)
 
 #from scipy.interpolate import interp1d,UnivariateSpline
 HBAR = 1.05457148e-34
@@ -95,7 +97,8 @@ class Markov(object):
     def zeroOrder(self):
         print "zero order"
         for i in enumerate(self.tsample):
-            sys.stdout.write('%s\r' % i[0])
+            # sys.stdout.write('%s\r' % i[0])
+            print i[0]
             sys.stdout.flush()
             self.Dfunction[i[0],:,:]=linalg.expm(self.T*i[1],15)
 
@@ -126,16 +129,14 @@ class Markov(object):
 
     def addOrder2(self):
         last = self.Dfunction[-1,...]
-        self.DfunctionTemp = np.empty((self.smpnum,self.N,self.N),complex)
+        #self.DfunctionTemp = np.empty((self.smpnum,self.N,self.N),complex)
         #self.DfunctionTemp = np.empty((self.N,self.N,self.smpnum),complex)
         for i in xrange(self.smpnum):
-            self.DfunctionTemp[i,...] = np.dot(self.T+self.D*self.EField.envelope(self.tsample[i]),self.Dfunction[i,...])
-
-        self.Dfunction = copy(self.DfunctionTemp)
-        del self.DfunctionTemp
+            tmp = np.dot(self.T+self.D*self.EField.envelope(self.tsample[i]),self.Dfunction[i,...])
+            self.Dfunction[i,...] = copy(tmp)
         # del self.T
         # del self.D
-        gc.collect()                    # clean up memory
+        #gc.collect()                    # clean up memory
 
         self.ctype_cumtrapz()
         # self.Dfunction = integrate.cumtrapz(self.DfunctionTemp,self.tsample)
@@ -185,14 +186,14 @@ class Markov(object):
         data['maxima'] = self.EField.maxima
         data['factor'] = self.EField.factor
         pickle.dump( data, open( self.file_out+".p", "wb" ) )
-        
+
     def initlibcumtrapz(self):
         self.libcumtrapz.cumtrapz.restype = None
         self.libcumtrapz.cumtrapz.argtypes = [np.ctypeslib.ndpointer(c_double),
                 c_double,
                 c_int,
                 c_int]
-        
+
     def ctype_cumtrapz(self):
         #result = (c_double*(2*N**2))()
         self.Dfunction = self.Dfunction.view('float64')

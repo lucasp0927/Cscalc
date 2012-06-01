@@ -4,10 +4,14 @@ import sys
 import numpy as np
 from scipy import linalg
 from ElectricField import ElectricField
-#import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg') # Must be before importing matplotlib.pyplot or pylab!
+import matplotlib.pyplot as plt
 import pickle
 from multiprocessing import Process, Queue
 from math import ceil
+import mkl
+mkl.set_num_threads(12)
 
 class Pulse(object):
     """
@@ -29,7 +33,7 @@ class Pulse(object):
         self.con = np.zeros(self.N,complex)
         self.con[-1] = 1.0
         self.ef = ef
-        self.process = 8
+        self.process = 1
         p2 = [self.ij2idx(x,x) for x in range(self.n)]
         for i in p2:
             self.lastrow[i] = 1.0
@@ -77,7 +81,8 @@ class Pulse(object):
             for j in xrange(3):      # make this more elegent
                 for k in self.group[j]:
                     data[j][i/step] += np.real(state[self.ij2idx(k,k)]) # i+i is slightly faster than i*2
-            sys.stdout.write('%s\r' % i)
+            # sys.stdout.write('%s\r' % i)
+            print i
             sys.stdout.flush()
             state = np.dot(stepM,state.T)
             time += rep*step
@@ -86,16 +91,19 @@ class Pulse(object):
         for t in enumerate(time_arr):
             self.file_out.write('{0:<20} {1[0]:<20} {1[1]:<20} {1[2]:<20}\n'.format(t[1],data[:,t[0]])) # output to log file
         self.file_out.close()
-        # plt.figure(1)
-        # fig = plt.subplot(1,1,1)
-        # plt.title("test")
-        # plt.ylim(-0.1,1.1)
-        # plt.xlabel('time')
-        # plt.ylabel('population')
-        # for i in xrange(3):
-        #     fig.plot(time_arr,data[i],label=str(i))
-        # handles, labels = fig.get_legend_handles_labels()
-        # fig.legend(handles[::-1], labels[::-1])
+
+        plt.figure(1)
+        fig = plt.subplot(1,1,1)
+        plt.title("test")
+        plt.ylim(-0.1,1.1)
+        plt.xlabel('time')
+        plt.ylabel('population')
+        for i in xrange(3):
+            fig.plot(time_arr,data[i],label=str(i))
+        handles, labels = fig.get_legend_handles_labels()
+        fig.legend(handles[::-1], labels[::-1])
+        plt.savefig(self.filename+"_time")
+        plt.clf()
         # plt.show()
 
     # def correct(self,arr):
@@ -131,7 +139,9 @@ class Pulse(object):
                 d = q.get()
                 data[d[0],d[1]] = d[2]
                 n += 1
-                sys.stdout.write('%s\r' % int(n/3))
+                #sys.stdout.write('%s\r' % int(n/3))
+                if n%30 == 0:
+                    print int(n/3)
                 sys.stdout.flush()
             except:
                 pass
@@ -141,23 +151,23 @@ class Pulse(object):
         for rf in enumerate(repf):
             self.file_out.write('{0:<20} {1[0]:<20} {1[1]:<20} {1[2]:<20}\n'.format(rf[1],data[:,rf[0]])) # output to log file
 
-        # plt.figure(1)
-        # fig = plt.subplot(1,1,1)
-        # plt.title("population vs repetition rate")
-        # plt.xlabel('repetition rate(Hz)')
-        # plt.ylabel('population')
-        # for i in xrange(0,1):           # plot only highest level
-        #     fig.plot(repf,data[i],label=str(i))
-        # handles, labels = fig.get_legend_handles_labels()
-        # fig.legend(handles[::-1], labels[::-1])
-        # plt.savefig(self.filename)
+        plt.figure(1)
+        fig = plt.subplot(1,1,1)
+        plt.title("population vs repetition rate")
+        plt.xlabel('repetition rate(Hz)')
+        plt.ylabel('population')
+        for i in xrange(0,1):           # plot only highest level
+            fig.plot(repf,data[i],label=str(i))
+        handles, labels = fig.get_legend_handles_labels()
+        fig.legend(handles[::-1], labels[::-1])
+        plt.savefig(self.filename)
 
-        # for i in xrange(1,3):           # plot only highest level
-        #     fig.plot(repf,data[i],label=str(i))
-        # handles, labels = fig.get_legend_handles_labels()
-        # fig.legend(handles[::-1], labels[::-1])
-        # plt.savefig(self.filename+"_all")
-        # plt.clf()
+        for i in xrange(1,3):           # plot only highest level
+            fig.plot(repf,data[i],label=str(i))
+        handles, labels = fig.get_legend_handles_labels()
+        fig.legend(handles[::-1], labels[::-1])
+        plt.savefig(self.filename+"_all")
+        plt.clf()
         
         self.file_out.close()
         

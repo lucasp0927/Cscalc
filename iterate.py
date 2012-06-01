@@ -26,23 +26,27 @@ def creat_matrix_file(input,output,ef):
         if norm == 0:
             break
         #markov.pp.close()
+        sys.stdout.flush()
     markov.write()
     
 def freq_data(input,ef):
     p = Pulse(input,ef)
     M = p.P - np.identity(p.N)
-    p.freq_plot(1e5,500)#better be multiple of process number
+    p.freq_plot(1e5,5000)#better be multiple of process number
     p.file_out.close()
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("name", type=str,help="calculate")
+    parser.add_argument("jobs", type=str)
     parser.add_argument("-m", "--matrix", action="store_true",help="calculate transition matrix file")
     parser.add_argument("-f", "--freq", action="store_true",help="plot frequency domain")    
     args = parser.parse_args()
     input_name = args.name
+    jobs = args.jobs
     base_name = str.split(args.name,'.')[0]
-    factor = [1,2,3,4,5,6,7,8,9,10,100,200,300,400,500,600,700,800,900,1000]
+    #factor = [1,2,3,4,5,6,7,8,9,10,100,200,300,400,500,600,700,800,900,1000]
+    factor = eval(jobs)
     ef = ElectricField()
     
     for f in factor:

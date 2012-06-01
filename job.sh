@@ -10,9 +10,9 @@ cd $PBS_O_WORKDIR
 ## Python 2.7.3
 #export PATH=/opt/python-2.7.3/bin:$PATH
 export PATH=/home/twliu/working/epd-7.3-1-rh3-x86_64/bin:$PATH
-export LD_LIBRARY_PATH=/opt/python-2.7.3/lib/python2.7:/opt/python-2.7.3/lib:$LD_LIBRARY_PATH
+#export LD_LIBRARY_PATH=/opt/python-2.7.3/lib/python2.7:/opt/python-2.7.3/lib:$LD_LIBRARY_PATH
 ## Lapack, Blas
-export LD_LIBRARY_PATH=/opt/lapack-3.4.1-gnu:/opt/BLAS-gnu:/usr/lib64:$LD_LIBRARY_PATH
+#export LD_LIBRARY_PATH=/opt/lapack-3.4.1-gnu:/opt/BLAS-gnu:/usr/lib64:$LD_LIBRARY_PATH
 ###
 echo '======================================================='
 echo Working directory is $PBS_O_WORKDIR
@@ -26,7 +26,8 @@ if [ -n "$PBS_NODEFILE" ]; then
    fi
 fi
 
-python iterate.py -m d1_test/d1.txt  > log
+#python iterate.py -m d1/d1.txt &> log
+python Pulse.py d1/d11.p &> log
 
 echo "Job Ended at `date`"
 echo '======================================================='
