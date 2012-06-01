@@ -5,6 +5,29 @@ int inline index(int i,int j,int k,int N)
   //  return 2*k+N*2*num*j+2*num*i;
   return k*N*N*2+N*2*j+2*i;
 }
+void addorder(double* T,double* D,double* env, double* A,int N, int num,double dt)
+{
+    typedef struct{ double re; double im; } complex16;
+    double tmp[N*N*2];
+    double result[N*N*2];
+    complex16 alpha;
+    alpha.re = 1.0;
+    alpha.im = 0.0;
+    complex16 beta;
+    beta.re = 0.0;
+    beta.im = 0.0;
+    complex16 ef;
+    for (int i = 0; i < num; ++i)
+    {
+	cblas_zcopy(N*N,T,1,tmp,1);
+	ef.re = env[i];
+	ef.im = 0.0;
+	cblas_zaxpy(N*N,&ef,D,1,tmp,1);
+	cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,N,N,N,&alpha,tmp,N,&A[index(0,0,i,N)],N,&beta,result,N);
+	cblas_zcopy(N*N,result,1,&A[index(0,0,i,N)],1);
+    }
+    cumtrapz(A,dt,N,num);
+}
 
 void cumtrapz(double* A,double dt,int N,int num)
 {

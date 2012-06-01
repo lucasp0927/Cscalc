@@ -14,8 +14,8 @@ import mkl
 mkl.set_num_threads(12)
 
 #from scipy.interpolate import interp1d,UnivariateSpline
-#HBAR = 1.05457148e-34
-HBAR = 1.0
+HBAR = 1.05457148e-34
+#HBAR = 1.0
 
 class Markov(object):
     """
@@ -133,20 +133,24 @@ class Markov(object):
         last = copy(self.Dfunction[-1,...])
         #self.DfunctionTemp = np.empty((self.smpnum,self.N,self.N),complex)
         #self.DfunctionTemp = np.empty((self.N,self.N,self.smpnum),complex)
-        for i in xrange(self.smpnum):
-             tmp = np.dot(self.T+self.D*self.envelope[i],self.Dfunction[i,...])
-             self.Dfunction[i,...] = copy(tmp)
+
+        # for i in xrange(self.smpnum):
+        #      tmp = np.dot(self.T+self.D*self.envelope[i],self.Dfunction[i,...])
+        #      self.Dfunction[i,...] = copy(tmp)
+
         #del self.DfunctionTemp
         # del self.T
         # del self.D
         #gc.collect()                    # clean up memory
-        self.ctype_cumtrapz()
+        self.ctype_addorder()
+        # self.ctype_cumtrapz()
+
         # self.Dfunction = integrate.cumtrapz(self.DfunctionTemp,self.tsample)
         # self.Dfunction = np.concatenate((np.zeros((self.N,self.N,1),complex),self.Dfunction),axis=-1)
         # for i in xrange(self.N):
         #     self.Dfunction[i,i,:] += np.ones(self.smpnum,complex)
         self.order += 1
-        now = copy(self.Dfunction[-1,...])
+        now = self.Dfunction[-1,...]
         return linalg.norm(now-last)
     #print "difference norm %f" %linalg.norm(now-last)
 
@@ -196,12 +200,36 @@ class Markov(object):
                 c_int,
                 c_int]
 
+        self.libcumtrapz.addorder.restype = None
+        self.libcumtrapz.addorder.argtypes = [np.ctypeslib.ndpointer(c_double),
+                np.ctypeslib.ndpointer(c_double),
+                np.ctypeslib.ndpointer(c_double),
+                np.ctypeslib.ndpointer(c_double),
+                c_int,
+                c_int,
+                c_double]
+
     def ctype_cumtrapz(self):
         #result = (c_double*(2*N**2))()
         self.Dfunction = self.Dfunction.view('float64')
         self.Dfunction = np.ascontiguousarray(self.Dfunction)
         self.libcumtrapz.cumtrapz(self.Dfunction,self.dt,self.N,self.smpnum)
         self.Dfunction = self.Dfunction.view('complex')
+
+    def ctype_addorder(self):
+        #result = (c_double*(2*N**2))()
+        self.Dfunction = self.Dfunction.view('float64')
+        self.Dfunction = np.ascontiguousarray(self.Dfunction)
+        self.T = self.T.view('float64')
+        self.T = np.ascontiguousarray(self.T)
+        self.D = self.D.view('float64')
+        self.D = np.ascontiguousarray(self.D)
+        self.envelope = np.ascontiguousarray(self.envelope,dtype = 'float64')
+
+        self.libcumtrapz.addorder(self.T,self.D,self.envelope,self.Dfunction,self.N,self.smpnum,self.dt)
+        self.Dfunction = self.Dfunction.view('complex')
+        self.T = self.T.view('complex')
+        self.D = self.D.view('complex')
 
 
 if __name__ == '__main__':
