@@ -14,8 +14,8 @@ import mkl
 mkl.set_num_threads(12)
 
 #from scipy.interpolate import interp1d,UnivariateSpline
-HBAR = 1.05457148e-34
-#HBAR = 1.0
+#HBAR = 1.05457148e-34
+HBAR = 1.0
 
 class Markov(object):
     """
@@ -42,6 +42,8 @@ class Markov(object):
         self.smpnum = self.EField.sample
         self.cutoff = self.EField.cutoff
         self.tsample = np.linspace(0,self.EField.cutoff,self.smpnum)
+        env_vec = np.vectorize(self.EField.envelope)
+        self.envelope = env_vec(self.tsample)
         self.dt = self.tsample[1]-self.tsample[0]
         self.Dfunction = np.empty((self.smpnum,self.N,self.N),complex)
         self.DfunctionTemp =[] #np.empty((self.N,self.N,self.smpnum),complex)
@@ -132,7 +134,7 @@ class Markov(object):
         #self.DfunctionTemp = np.empty((self.smpnum,self.N,self.N),complex)
         #self.DfunctionTemp = np.empty((self.N,self.N,self.smpnum),complex)
         for i in xrange(self.smpnum):
-             tmp = np.dot(self.T+self.D*self.EField.envelope(self.tsample[i]),self.Dfunction[i,...])
+             tmp = np.dot(self.T+self.D*self.envelope[i],self.Dfunction[i,...])
              self.Dfunction[i,...] = copy(tmp)
         #del self.DfunctionTemp
         # del self.T
@@ -197,6 +199,7 @@ class Markov(object):
     def ctype_cumtrapz(self):
         #result = (c_double*(2*N**2))()
         self.Dfunction = self.Dfunction.view('float64')
+        self.Dfunction = np.ascontiguousarray(self.Dfunction)
         self.libcumtrapz.cumtrapz(self.Dfunction,self.dt,self.N,self.smpnum)
         self.Dfunction = self.Dfunction.view('complex')
 
