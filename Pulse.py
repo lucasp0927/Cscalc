@@ -190,7 +190,7 @@ class Pulse(object):
         for t in job:
             M = np.dot(linalg.expm(self.T*(t[1]-self.cutoff)),self.P)
             #state1 = self.matrix_vector_power(M,state.T,2**26)
-            M = np.linalg.matrix_power(M,2**26)
+            M = np.linalg.matrix_power(M,100000000)
             state1 = np.dot(M,state.T)            
             
             # M = M - np.identity(self.N)
