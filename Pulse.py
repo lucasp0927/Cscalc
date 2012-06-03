@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import pickle
 from multiprocessing import Process, Queue
 from math import ceil
+#from ctypes import *
 import mkl
 mkl.set_num_threads(12)
 
@@ -20,6 +21,8 @@ class Pulse(object):
     def __init__(self, file_in, ef):
         """
         """
+        # self.libcumtrapz = CDLL("./cumtrapz/src/obj/libcumtrapz.so")
+        # self.libinit()
         self.filename =str.split(file_in,'.')[0]+"_freq"
         self.file_out = ''
         self.parameter = pickle.load( open( file_in, "rb" ) )
@@ -39,7 +42,22 @@ class Pulse(object):
             self.lastrow[i] = 1.0
         self.ii2idxv = np.vectorize(self.ii2idx)
 
+    # def libinit(self,):
+    #     self.libcumtrapz.matrix_power.restype = None
+    #     self.libcumtrapz.matrix_power.argtypes = [np.ctypeslib.ndpointer(c_double),
+    #                                          c_int,
+    #                                          c_int,
+    #                                          np.ctypeslib.ndpointer(c_double)]        
 
+    # def ctype_matrix_power(self,A,N,p,B):
+    #     A = A.view('float64')
+    #     A = np.ascontiguousarray(A)
+    #     B = B.view('float64')
+    #     B = np.ascontiguousarray(B)
+    #     self.libcumtrapz.matrix_power(A,N,p,B)
+    #     A = A.view('complex')
+    #     B = B.view('complex')
+    
     def ij2idx(self,i,j):
         """
         0 1 2
@@ -185,13 +203,15 @@ class Pulse(object):
     def plot_worker(self,q,job):
         state = np.zeros(self.N,complex)
         start = 1
+        Ms = np.zeros((self.N,self.N))
         for i in self.group[start]:
             state[self.ij2idx(i,i)] = 1.0/len(self.group[start])
         for t in job:
             M = np.dot(linalg.expm(self.T*(t[1]-self.cutoff)),self.P)
             #state1 = self.matrix_vector_power(M,state.T,2**26)
-            M = np.linalg.matrix_power(M,100000000)
-            state1 = np.dot(M,state.T)            
+            #self.ctype_matrix_power(M,self.N,100000000,Ms)
+            Ms = np.linalg.matrix_power(M,100000000)
+            state1 = np.dot(Ms,state.T)            
             
             # M = M - np.identity(self.N)
             # M[-1,...] = self.lastrow

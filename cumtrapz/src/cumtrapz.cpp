@@ -130,30 +130,91 @@ void matrix_power(double* A,int N, int p, double* B)
 	buffer[BUF_SIZE - 1] = '\0';
 	int size=0;
 	int2bin(p, buffer, BUF_SIZE - 1,size);
-	double tmp[N*N*2];
-	double Z[N*N*2];
+	double* tmpptr,*tmp,*Z;
+	Z = (double*) malloc (N*N*2*sizeof(double));
+	tmp = (double*) malloc (N*N*2*sizeof(double));
 	cblas_zcopy(N*N,A,1,Z,1);
 	int q = 0;
 	while (buffer[BUF_SIZE-2-q] == '0')
 	{
 	    cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,N,N,N,&alpha,Z,N,Z,N,&beta,tmp,N);
-	    cblas_zcopy(N*N,tmp,1,Z,1);	    
+	    tmpptr = Z;
+	    Z = tmp;
+	    tmp = tmpptr;
 	    q++;
 	}
 	cblas_zcopy(N*N,Z,1,B,1);	    
 	for (int i=q+1;i<size;i++)
 	{
 	    cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,N,N,N,&alpha,Z,N,Z,N,&beta,tmp,N);
-	    cblas_zcopy(N*N,tmp,1,Z,1);
+	    tmpptr = Z;
+	    Z = tmp;
+	    tmp = tmpptr;
 	    if (buffer[BUF_SIZE-2-i]=='1')
 	    {
 		cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,N,N,N,&alpha,B,N,Z,N,&beta,tmp,N);
 		cblas_zcopy(N*N,tmp,1,B,1);
 	    }
 	}
+	free(Z);
+	free(tmp);
     }
 }
 
+void matrix_vector_power(double* A,int N, int p, double* v_r, double* v)
+{
+    // power is 2^p
+    // p must >= 2
+    // A B are complex matrices
+    typedef struct{ double re; double im; } complex16;
+    complex16 alpha;
+    alpha.re = 1.0;
+    alpha.im = 0.0;
+    complex16 beta;
+    beta.re = 0.0;
+    beta.im = 0.0;
+    
+    int k = (int)ceil(log2((double)N/log(2)));
+    if (p<=k)
+    {
+	double* tmpptr,*tmp,*Z;
+	Z = (double*) malloc (N*2*sizeof(double));
+	tmp = (double*) malloc (N*2*sizeof(double));
+	cblas_zcopy(N*2,v,1,Z,1);	    
+	for (int i = 0; i < 2^p; i++)
+	{
+	    cblas_zgemv(CblasRowMajor,CblasNoTrans,N,N,&alpha,A,N,Z,1,&beta,tmp,1);
+	    tmpptr = Z;
+	    Z = tmp;
+	    tmp = tmpptr;
+	}
+	cblas_zcopy(N*2,Z,1,v_r,1);	    
+	free(Z);
+	free(tmp);	
+    }
+    else
+    {
+	double* tmpptr,*tmp,*Z,*B;
+	B = (double*) malloc (N*N*2*sizeof(double));
+	Z = (double*) malloc (N*2*sizeof(double));
+	tmp = (double*) malloc (N*2*sizeof(double));
+	cblas_zcopy(N*2,v,1,Z,1);	    
+	matrix_power(A,N,2^(p-k),B);
+	for (int i = 0; i < 2^k; i++)
+	{
+	    cblas_zgemv(CblasRowMajor,CblasNoTrans,N,N,&alpha,A,N,Z,1,&beta,tmp,1);
+	    tmpptr = Z;
+	    Z = tmp;
+	    tmp = tmpptr;
+	}
+	cblas_zcopy(N*2,Z,1,v_r,1);	    
+	free(Z);
+	free(tmp);	
+	free(B);	
+    }
+
+
+}
 void expm(double* A,int N,double t, double* B)
 {
     
