@@ -2,6 +2,7 @@
 from __future__ import division
 import numpy as np
 from atom import Atom
+from copy import copy
 import math
 #import pydot
 
@@ -168,7 +169,7 @@ class Parameter(object):
                             tmp[i][j] += cs.dipole_element(**coef)
                     else:
                         tmp[i][j] = 0.0
-            self.parameter['dipole'].append(tmp)
+            self.parameter['dipole'].append(copy(tmp))
 
     def decoherence(self):
         gamma = self.gamma

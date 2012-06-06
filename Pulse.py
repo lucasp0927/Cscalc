@@ -82,9 +82,9 @@ class Pulse(object):
         self.file_out.write("#{:<20} {:<20} {:<20} {:<20}\n".format("rep_freq(Hz)","population(0)","population(1)","population(2)"))
 
     def time_plot(self,num,step):
-        self.file_out=open(self.filename+".dat","w")
+        self.file_out=open(self.filename+"time.dat","w")
         print "plot time domain, total",num,"points."
-        rep = 1.0/(self.ef.repetition_freq/(2*np.pi))
+        rep = 1.0/((self.ef.repetition_freq+50000)/(2*np.pi))
         r_t = rep - self.cutoff
         M = np.dot(linalg.expm(self.T*r_t),self.P)                
         start = 1
@@ -113,10 +113,10 @@ class Pulse(object):
         plt.figure(1)
         fig = plt.subplot(1,1,1)
         plt.title("test")
-        plt.ylim(-0.1,1.1)
+        # plt.ylim(-0.1,1.1)
         plt.xlabel('time')
         plt.ylabel('population')
-        for i in xrange(3):
+        for i in xrange(1):
             fig.plot(time_arr,data[i],label=str(i))
         handles, labels = fig.get_legend_handles_labels()
         fig.legend(handles[::-1], labels[::-1])
@@ -210,7 +210,7 @@ class Pulse(object):
             M = np.dot(linalg.expm(self.T*(t[1]-self.cutoff)),self.P)
             #state1 = self.matrix_vector_power(M,state.T,2**26)
             #self.ctype_matrix_power(M,self.N,100000000,Ms)
-            Ms = np.linalg.matrix_power(M,100000000)
+            Ms = np.linalg.matrix_power(M,50000000)
             state1 = np.dot(Ms,state.T)            
             
             # M = M - np.identity(self.N)
