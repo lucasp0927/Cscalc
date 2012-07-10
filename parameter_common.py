@@ -212,13 +212,13 @@ class Parameter(object):
                 for j in range(i,n):
                     d1 = self.index2lfm(i)
                     d2 = self.index2lfm(j)
-                    if d1[0:2] == pair[0] and d2[0:2] == pair[0] and i != j: # both are excited
+                    if d1[0:2] == pair[0] and d2[0:2] == pair[0] and i != j:
                           self.parameter['decoherence_matrix'][i][j].append([i,j,-1.0*Gamma])
-                    elif d1[0:2] == pair[0] and d2[0:2] == pair[1]: # d1 is excited d2 is ground
+                    elif d1[0:2] == pair[0] and d2[0:2] == pair[1]:
                         self.parameter['decoherence_matrix'][i][j].append([i,j,-1.0*Gamma/2.0])
-                    elif d1[0:2] == pair[1] and d2[0:2] == pair[0]: # d1 is ground d2 is excited
+                    elif d1[0:2] == pair[1] and d2[0:2] == pair[0]:
                         self.parameter['decoherence_matrix'][i][j].append([i,j,-1.0*Gamma/2.0])
-                    elif d1[0:2] == pair[1] and d2[0:2] == pair[1]: # both ground
+                    elif d1[0:2] == pair[1] and d2[0:2] == pair[1]:
                         for q in (-1.0,0.0,1.0):
                             f1 = pair[0][1]
                             if (d1[2]+q <= f1 and d1[2]+q >= -1*f1) and (d2[2]+q <= f1 and d2[2]+q >= -1*f1):
@@ -244,7 +244,7 @@ class Parameter(object):
                                          'I':7.0/2.0}
                                 #this correction coefficient (see equation 54) should be written to atom.py later
                                 rev = (-1)**(pair[0][1]-pair[1][1]+q)*math.sqrt((2*pair[0][1]+1)/(2*pair[1][1]+1))
-                                rev = rev**2 #-1's power doesn't matter now, but still need to be checked
+                                rev = rev**2
                                 tmp = Gamma*cs.cg_coef(**coef1)*cs.cg_coef(**coef2)*rev
                                 if tmp != 0.0:
                                     ii = self.lfm2index(pair[0][0],pair[0][1],d1[2]+q)
