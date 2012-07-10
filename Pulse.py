@@ -22,6 +22,7 @@ class Pulse(object):
         """
         self.filename =str.split(file_in,'.')[0]+"_freq"
         self.file_out = ''
+        self.file_out_all = ''
         self.parameter = pickle.load( open( file_in, "rb" ) )
         self.T = self.parameter['T']
         self.P = self.parameter['P']
@@ -95,10 +96,10 @@ class Pulse(object):
         plt.figure(1)
         fig = plt.subplot(1,1,1)
         plt.title("test")
-        plt.ylim(-0.1,1.1)
+        #plt.ylim(-0.1,1.1)
         plt.xlabel('time')
         plt.ylabel('population')
-        for i in xrange(3):
+        for i in xrange(1):
             fig.plot(time_arr,data[i],label=str(i))
         handles, labels = fig.get_legend_handles_labels()
         fig.legend(handles[::-1], labels[::-1])
@@ -116,12 +117,14 @@ class Pulse(object):
 
     def freq_plot(self,freq_range,number):
         self.file_out=open(self.filename+".dat","w")
+        self.file_out_all=open(self.filename+"_all.dat","w")
         self.dump_header()        
         print "plot frequency domain, total",number,"points."
         rf = self.ef.repetition_freq/(2*np.pi)
         repf = np.linspace(rf-freq_range,rf+freq_range,number)
         rept = 1.0/repf
         data = np.zeros((3,number))
+        data_all = np.zeros((self.n,number))
 
         def chunks(l, n):
             n = int(ceil(float(len(l))/float(n)))
@@ -137,12 +140,15 @@ class Pulse(object):
         while n < len(rept)*len(self.group): # better way?
             try:
                 d = q.get()
-                data[d[0],d[1]] = d[2]
-                n += 1
-                #sys.stdout.write('%s\r' % int(n/3))
-                if n%30 == 0:
-                    print int(n/3)
-                sys.stdout.flush()
+                if len(d) == 3:
+                    data[d[0],d[1]] = d[2]
+                    n += 1
+                    #sys.stdout.write('%s\r' % int(n/3))
+                    if n%30 == 0:
+                        print int(n/3)
+                    sys.stdout.flush()
+                elif len(d) == 2: # alldata
+                    data_all[:,d[0]] = d[1]
             except:
                 pass
         for p in process:
@@ -150,7 +156,11 @@ class Pulse(object):
 
         for rf in enumerate(repf):
             self.file_out.write('{0:<20} {1[0]:<20} {1[1]:<20} {1[2]:<20}\n'.format(rf[1],data[:,rf[0]])) # output to log file
-
+            self.file_out_all.write('{0:<20}'.format(rf[1]))
+            for i in range(self.n):
+                self.file_out_all.write('{0:<20}'.format(data_all[i,rf[0]]))
+            self.file_out_all.write('\n')
+            
         plt.figure(1)
         fig = plt.subplot(1,1,1)
         plt.title("population vs repetition rate")
@@ -170,17 +180,18 @@ class Pulse(object):
         plt.clf()
         
         self.file_out.close()
+        self.file_out_all.close()
         
-    def matrix_vector_power(self,M,v,n):
-        ###
-        #find closest log 2
-        ###
-        new_n = np.ceil(np.log2(n))
-        part = np.floor(np.log2(self.N/np.log(2)))
-        partM = np.linalg.matrix_power(M,int(2**(new_n-part)))
-        for i in range(int(2**part)):
-            v = np.dot(partM,v.T)
-        return v
+    # def matrix_vector_power(self,M,v,n):
+    #     ###
+    #     #find closest log 2
+    #     ###
+    #     new_n = np.ceil(np.log2(n))
+    #     part = np.floor(np.log2(self.N/np.log(2)))
+    #     partM = np.linalg.matrix_power(M,int(2**(new_n-part)))
+    #     for i in range(int(2**part)):
+    #         v = np.dot(partM,v.T)
+    #     return v
 
     def plot_worker(self,q,job):
         state = np.zeros(self.N,complex)
@@ -189,21 +200,22 @@ class Pulse(object):
             state[self.ij2idx(i,i)] = 1.0/len(self.group[start])
         for t in job:
             M = np.dot(linalg.expm(self.T*(t[1]-self.cutoff)),self.P)
-            # M = np.linalg.matrix_power(M,200000)
-            # state1 = np.dot(M,state.T)            
-            state1 = self.matrix_vector_power(M,state.T,2**26)
+            #state1 = self.matrix_vector_power(M,state.T,2**26)
+            M = np.linalg.matrix_power(M,600000)
+            state1 = np.dot(M,state.T)            
+            
             # M = M - np.identity(self.N)
             # M[-1,...] = self.lastrow
             # state1 = linalg.solve(M,self.con)
             for g in enumerate(self.group):
                 q.put([g[0],t[0],np.sum(np.real(state1[self.ii2idxv(g[1][:])]))])
-
+            q.put([t[0],np.real(state1[self.ii2idxv(np.arange(self.n))])])
        
 if __name__ == '__main__':
     ef = ElectricField()
     p = Pulse(sys.argv[1],ef)
     M = p.P - np.identity(p.N)
-    p.time_plot(100000000,100000)
+    p.time_plot(600000,600)
     #p.freq_plot(1e6,100)
     #p.freq_plot(1e-9,2e-9,10000,20000)
 

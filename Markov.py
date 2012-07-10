@@ -218,6 +218,7 @@ class Markov(object):
 
     def ctype_addorder(self):
         #result = (c_double*(2*N**2))()
+
         self.Dfunction = self.Dfunction.view('float64')
         self.Dfunction = np.ascontiguousarray(self.Dfunction)
         self.T = self.T.view('float64')
@@ -227,6 +228,7 @@ class Markov(object):
         self.envelope = np.ascontiguousarray(self.envelope,dtype = 'float64')
 
         self.libcumtrapz.addorder(self.T,self.D,self.envelope,self.Dfunction,self.N,self.smpnum,self.dt)
+
         self.Dfunction = self.Dfunction.view('complex')
         self.T = self.T.view('complex')
         self.D = self.D.view('complex')

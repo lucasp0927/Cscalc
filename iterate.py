@@ -32,7 +32,7 @@ def creat_matrix_file(input,output,ef):
 def freq_data(input,ef):
     p = Pulse(input,ef)
     M = p.P - np.identity(p.N)
-    p.freq_plot(1e5,5000)#better be multiple of process number
+    p.freq_plot(1e4,1000)#better be multiple of process number
     p.file_out.close()
     
 if __name__ == '__main__':

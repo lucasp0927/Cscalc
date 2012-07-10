@@ -3,6 +3,7 @@ from __future__ import division
 import numpy as np
 from atom import Atom
 import math
+from copy import copy
 #import pydot
 
 
@@ -147,7 +148,7 @@ class Parameter(object):
                                      'F1':d1[1],
                                      'F2':d2[1],
                                      'mf1':d1[2],
-                                     'mf2':d2[2]+q,
+                                     'mf2':d2[2],
                                      'J1':1.0/2.0,
                                      'J2':j2,
                                      'I':7.0/2.0}
@@ -161,24 +162,25 @@ class Parameter(object):
                                      'F1':d2[1],
                                      'F2':d1[1],
                                      'mf1':d2[2],
-                                     'mf2':d1[2]+q,
+                                     'mf2':d1[2],
                                      'J1':1.0/2.0,
                                      'J2':j2,
                                      'I':7.0/2.0}
                             tmp[i][j] += cs.dipole_element(**coef)
                     else:
                         tmp[i][j] = 0.0
-            self.parameter['dipole'].append(tmp)
+            self.parameter['dipole'].append(copy(tmp))
 
     def decoherence(self):
         gamma = self.gamma
         if self.d1 == 1:
             j2 = 1.0/2.0
-            Gamma = 2*np.pi*4.575e6 #Decay Rate/Natural Line Width (rad)
+            #Gamma = 2*np.pi*4.575e6 #Decay Rate/Natural Line Width (rad)
         else:
             j2 = 3.0/2.0
-            Gamma = 2*np.pi*5.234e6 #Decay Rate/Natural Line Width (rad)
+            #Gamma = 2*np.pi*5.234e6 #Decay Rate/Natural Line Width (rad)
             #Gamma = 2*np.pi*750.0e6
+        Gamma = 2*np.pi*700e6
         n=self.parameter['n']
         self.parameter['decoherence_matrix'] = [[[] for i in range(n)] for j in range(n)]
         cs = Atom()
@@ -210,13 +212,13 @@ class Parameter(object):
                 for j in range(i,n):
                     d1 = self.index2lfm(i)
                     d2 = self.index2lfm(j)
-                    if d1[0:2] == pair[0] and d2[0:2] == pair[0] and i != j:
+                    if d1[0:2] == pair[0] and d2[0:2] == pair[0] and i != j: # both are excited
                           self.parameter['decoherence_matrix'][i][j].append([i,j,-1.0*Gamma])
-                    elif d1[0:2] == pair[0] and d2[0:2] == pair[1]:
+                    elif d1[0:2] == pair[0] and d2[0:2] == pair[1]: # d1 is excited d2 is ground
                         self.parameter['decoherence_matrix'][i][j].append([i,j,-1.0*Gamma/2.0])
-                    elif d1[0:2] == pair[1] and d2[0:2] == pair[0]:
+                    elif d1[0:2] == pair[1] and d2[0:2] == pair[0]: # d1 is ground d2 is excited
                         self.parameter['decoherence_matrix'][i][j].append([i,j,-1.0*Gamma/2.0])
-                    elif d1[0:2] == pair[1] and d2[0:2] == pair[1]:
+                    elif d1[0:2] == pair[1] and d2[0:2] == pair[1]: # both ground
                         for q in (-1.0,0.0,1.0):
                             f1 = pair[0][1]
                             if (d1[2]+q <= f1 and d1[2]+q >= -1*f1) and (d2[2]+q <= f1 and d2[2]+q >= -1*f1):
@@ -242,7 +244,7 @@ class Parameter(object):
                                          'I':7.0/2.0}
                                 #this correction coefficient (see equation 54) should be written to atom.py later
                                 rev = (-1)**(pair[0][1]-pair[1][1]+q)*math.sqrt((2*pair[0][1]+1)/(2*pair[1][1]+1))
-                                rev = rev**2
+                                rev = rev**2 #-1's power doesn't matter now, but still need to be checked
                                 tmp = Gamma*cs.cg_coef(**coef1)*cs.cg_coef(**coef2)*rev
                                 if tmp != 0.0:
                                     ii = self.lfm2index(pair[0][0],pair[0][1],d1[2]+q)
