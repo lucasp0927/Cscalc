@@ -14,8 +14,8 @@ import mkl
 mkl.set_num_threads(12)
 
 #from scipy.interpolate import interp1d,UnivariateSpline
-HBAR = 1.05457148e-34
-#HBAR = 1.0
+#HBAR = 1.05457148e-34
+HBAR = 1.0
 
 class Markov(object):
     """

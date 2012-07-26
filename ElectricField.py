@@ -11,9 +11,9 @@ class ElectricField(object):
         """
         """
         twopi = 2*np.pi
-        #self.carrier_freq = 2105628723506709.8 #three
+        self.carrier_freq = 2105628723506709.8 #three
         #self.carrier_freq =  2105624596584936.2 #d1 
-        self.carrier_freq = 351.72571850e12*twopi+5.170855370625e9*twopi-188.4885e6*twopi#d2
+        #self.carrier_freq = 351.72571850e12*twopi+5.170855370625e9*twopi-188.4885e6*twopi#d2
         #self.carrier_freq = 351.72571850e12*twopi+5.170855370625e9*twopi#d2
 
         self.repetition_freq =  57759008871.57628/10
@@ -24,7 +24,7 @@ class ElectricField(object):
         
     def setfactor(self,f):
         self.factor = float(f)
-        self.maxima = 1e6*np.sqrt(self.factor)
+        self.maxima = 1e3*np.sqrt(self.factor)
         self.sigma = 20e-15
 
     def envelope(self,t):

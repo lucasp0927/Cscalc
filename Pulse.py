@@ -201,12 +201,14 @@ class Pulse(object):
         for t in job:
             M = np.dot(linalg.expm(self.T*(t[1]-self.cutoff)),self.P)
             #state1 = self.matrix_vector_power(M,state.T,2**26)
-            M = np.linalg.matrix_power(M,1200000)
-            state1 = np.dot(M,state.T)            
+
+            # M = np.linalg.matrix_power(M,12000)
+            # state1 = np.dot(M,state.T)            
             
-            # M = M - np.identity(self.N)
-            # M[-1,...] = self.lastrow
-            # state1 = linalg.solve(M,self.con)
+            M = M - np.identity(self.N)
+            M[-1,...] = self.lastrow
+            state1 = linalg.solve(M,self.con)
+
             for g in enumerate(self.group):
                 q.put([g[0],t[0],np.sum(np.real(state1[self.ii2idxv(g[1][:])]))])
             q.put([t[0],np.real(state1[self.ii2idxv(np.arange(self.n))])])
@@ -215,7 +217,7 @@ if __name__ == '__main__':
     ef = ElectricField()
     p = Pulse(sys.argv[1],ef)
     M = p.P - np.identity(p.N)
-    p.time_plot(1200000,600)
+    p.time_plot(120000,60)
     #p.freq_plot(1e6,100)
     #p.freq_plot(1e-9,2e-9,10000,20000)
 
