@@ -14,8 +14,8 @@ import mkl
 mkl.set_num_threads(12)
 
 #from scipy.interpolate import interp1d,UnivariateSpline
-#HBAR = 1.05457148e-34
-HBAR = 1.0
+HBAR = 1.05457148e-34
+#HBAR = 1.0
 
 class Markov(object):
     """
@@ -30,6 +30,7 @@ class Markov(object):
         dictf = open(file_in,'r')
         self.parameter = eval(dictf.read())
         self.omega = self.parameter['omega']
+        self.gamma = self.parameter['gamma']
         self.group = self.parameter['level_group']
         self.dipole = self.parameter['dipole'][0]
         self.n = self.parameter['n']# number of levels
@@ -152,32 +153,6 @@ class Markov(object):
         self.order += 1
         now = self.Dfunction[-1,...]
         return linalg.norm(now-last)
-    #print "difference norm %f" %linalg.norm(now-last)
-
-    # def plotGraph(self,title=""):
-    #     start = 0
-    #     state = np.zeros(self.N,complex)
-    #     for i in self.group[start]:
-    #         state[self.ij2idx(i,i)] = 1.0/len(self.group[start])
-    #     data = np.zeros((3,self.smpnum))
-    #     for i in xrange(self.smpnum):
-    #         state1 = np.dot(self.Dfunction[i,:,:],state.T)
-    #         for j in xrange(3):           # make this more elegent
-    #             for k in self.group[j]:
-    #                 data[j][i] += np.real(state1[self.ij2idx(k,k)])
-    #     plt.figure(1)
-    #     fig = plt.subplot(1,1,1)
-    #     plt.title(title)
-    #     plt.ylim(0,1)
-    #     plt.xlabel('time')
-    #     plt.ylabel('population')
-    #     for i in xrange(3):
-    #         fig.plot(self.tsample,data[i],label=str(i))
-    #     handles, labels = fig.get_legend_handles_labels()
-        #fig.legend(handles[::-1], labels[::-1])
-        #plt.savefig(self.pp,format='pdf')
-        #plt.clf()
-        #show()
 
     def write(self):
         data={}
@@ -191,6 +166,7 @@ class Markov(object):
         data['sigma'] = self.EField.sigma
         data['maxima'] = self.EField.maxima
         data['factor'] = self.EField.factor
+        data['gamma'] = self.gamma
         pickle.dump( data, open( self.file_out+".p", "wb" ) )
 
     def initlibcumtrapz(self):

@@ -7,7 +7,7 @@ import time
 import numpy as np
 import argparse
 
-def creat_matrix_file(input,output,ef):
+def create_matrix_file(input,output,ef):
     markov = Markov(input,output,ef)
     markov.prepareT()
     markov.prepareD()
@@ -20,19 +20,15 @@ def creat_matrix_file(input,output,ef):
         print "difference norm %e" %norm        
         t2 = time.time()
         print 'took %0.3f ms' % ((t2-t1)*1000.0)
-        # markov.prepareT()
-        # markov.prepareD()        
-        #markov.plotGraph(title=str(i)+"th order")
         if norm == 0:
             break
-        #markov.pp.close()
         sys.stdout.flush()
     markov.write()
     
 def freq_data(input,ef):
     p = Pulse(input,ef)
     M = p.P - np.identity(p.N)
-    p.freq_plot(1e4,1000)#better be multiple of process number
+    p.freq_plot(2000,500)#better be multiple of process number
     p.file_out.close()
     
 if __name__ == '__main__':
@@ -53,6 +49,6 @@ if __name__ == '__main__':
         ef.setfactor(f)
         print 'factor',f
         if args.matrix:
-            creat_matrix_file(input_name,base_name+str(f),ef)
+            create_matrix_file(input_name,base_name+str(f),ef)
         if args.freq:
             freq_data(base_name+str(f)+".p",ef)

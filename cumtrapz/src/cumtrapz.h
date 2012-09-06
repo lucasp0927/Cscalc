@@ -4,8 +4,18 @@
 #include <stdio.h>
 #include "cmath"
 #include "math.h"
-#include "mkl.h"
-#include "mkl_cblas.h"
+
+
+/* os x */
+#ifdef __APPLE__
+#include <Accelerate/Accelerate.h>
+#endif
+/* mkl */
+#ifdef __linux__
+ #include "mkl.h" 
+ #include "mkl_cblas.h" 
+#endif
+
 #define BUF_SIZE 50 		/* used in int2bin */
 //define forward
 /* extern "C" */

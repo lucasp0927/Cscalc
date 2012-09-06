@@ -31,7 +31,7 @@ class Parameter(object):
         self.l1subn = {}
         self.l0subn = {}
         self.gamma = gamma
-        n = 0#total sublevels 
+        n = 0#total sublevels
         for i in l1f:
             n += 2*i + 1
         for i in l0f:
@@ -180,7 +180,7 @@ class Parameter(object):
             j2 = 3.0/2.0
             #Gamma = 2*np.pi*5.234e6 #Decay Rate/Natural Line Width (rad)
             #Gamma = 2*np.pi*750.0e6
-        Gamma = 2*np.pi*700e6
+        Gamma = 2*np.pi*9e7
         n=self.parameter['n']
         self.parameter['decoherence_matrix'] = [[[] for i in range(n)] for j in range(n)]
         cs = Atom()
@@ -189,15 +189,15 @@ class Parameter(object):
             for j in range(i,n):
                 d1 = self.index2lfm(i)
                 d2 = self.index2lfm(j)
-                if d1[0:2] == (0,3) and d2[0:2] == (0,3): #ground state
-                    if i == j: # diagonal
-                        for q in range(-4,5):
-                            ii = int(self.lfm2index(0,4,q))
-                            self.parameter['decoherence_matrix'][ii][ii].append([ii,ii,-1*gamma/9.0])
-                            self.parameter['decoherence_matrix'][ii][ii].append([i,j,gamma/9.0])
-                            self.parameter['decoherence_matrix'][i][j].append([ii,ii,gamma/9.0])
-                            self.parameter['decoherence_matrix'][i][j].append([i,j,-1*gamma/9.0])
+                if d1[0:2] == (0,4) and d2[0:2] == (0,3): #ground state
+                    #if np.abs(d1[2]-d2[2]) <= 2: #no selection rule
+                    self.parameter['decoherence_matrix'][i][i].append([i,i,-1.0*gamma])
+                    self.parameter['decoherence_matrix'][i][i].append([j,j,gamma])
+                    self.parameter['decoherence_matrix'][j][j].append([j,j,-1.0*gamma])
+                    self.parameter['decoherence_matrix'][j][j].append([i,i,gamma])
+                    self.parameter['decoherence_matrix'][i][j].append([i,j,-1.0*gamma])
 #                            self.graph.add_edge(pydot.Edge(self.l0subn[4][int(d1[2]+q+4)],self.l0subn[3][int(d1[2]+3)],label = 'gamma/9'))
+
                 if d2[0:2] == (0,3):
                     for q in range(-4,5):
                         allow_state = []
@@ -263,8 +263,9 @@ class Parameter(object):
         for pair in self.parameter['nup']:
             freq = self.parameter['omega'][self.lfm2index(*pair[0])]-self.parameter['omega'][self.lfm2index(*pair[1])]
             self.parameter['nu'].append(freq)
-        
+
     def write(self):
+        self.parameter['gamma'] = self.gamma
         self.parameter['d1'] = self.d1
         #self.prepare_graph()
         self.level_group()

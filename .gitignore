@@ -2,3 +2,6 @@
 *.txt
 *.p
 *.so
+.ropeproject/
+.zcache/
+*.DS_Store
