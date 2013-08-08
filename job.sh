@@ -26,8 +26,9 @@ if [ -n "$PBS_NODEFILE" ]; then
    fi
 fi
 
+#put your jobs here!
 #python iterate.py -m d1/d1.txt &> log
-python Pulse.py d1/d11.p &> log
+#python Pulse.py d1/d11.p &> log
 
 echo "Job Ended at `date`"
 echo '======================================================='
