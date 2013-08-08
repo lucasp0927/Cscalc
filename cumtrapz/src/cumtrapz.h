@@ -18,8 +18,9 @@
 
 #define BUF_SIZE 50 		/* used in int2bin */
 //define forward
-/* extern "C" */
-/* void deviceVerify(); */
+/*
+In this project, only addorder() and cumtrapz() are used, other functions are experimental and not guarantee to work!
+*/
 int inline index(int i,int j,int k);
 extern "C"
 void addorder(double* T,double* D,double* env, double* A,int N, int num,double dt);
