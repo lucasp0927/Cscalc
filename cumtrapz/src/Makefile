@@ -10,7 +10,7 @@ ICC       := icc
 #NVFLAGS =-arch sm_21 -lcublas -L/usr/share/cuda-sdk/C/lib  --compiler-bindir=gcc -m64 --compiler-options '-O3 -fno-strict-aliasing'
 #NVFLAGS =-O3 -fno-strict-aliasing
 #NVFLAGS_SHARE =-arch sm_21 -shared -Xcompiler -fpic -lcublas -L/usr/share/cuda-sdk/C/lib --compiler-bindir=gcc -m64 --compiler-options '-O3 -fPIC'
-ICCFLAGS_SHARE =-shared -O3 -fPIC -openmp -xHost -fast -unroll-aggressive -wd981 -mkl -Wall #operand order warning
+ICCFLAGS_SHARE =-shared -O3 -fPIC -openmp -xHost -fast -unroll-aggressive -wd981 -mkl -no-multibyte-chars -Wall #operand order warning
 # os x
 GCCFLAGS_SHARE =-shared -O3 -fPIC -fopenmp -Wall -framework Accelerate #operand order warning
 #FLAGS_SHARE =-shared -O3 -fPIC -fopenmp -Wall

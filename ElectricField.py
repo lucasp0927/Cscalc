@@ -60,7 +60,7 @@ class ElectricField(object):
         power3 = np.sum(e)*3e8*8.85e-12/2/(2*np.pi/self.repetition_freq)/2.0
         # print '{:e}'.format(power1)+"w/m^2"
         # print '{:e}'.format(power2)+"w/m^2"
-        return '{:e}'.format(power3)+"w/m^2"                  
+        return '{0:e}'.format(power3)+"w/m^2"                  
     #return '{:e}'.format(3e8*8.85e-12/2*integrate.romberg(lambda x:(self.envelope(x)*np.sin(self.carrier_freq*x))**2,0,self.cutoff,divmax=20)/(2*np.pi/self.repetition_freq))+"w/m^2"
     
     # def check(self,):
@@ -85,6 +85,6 @@ class ElectricField(object):
 
 if __name__ == '__main__':
     ef = ElectricField()
-    ef.calpower()
+    print ef.calpower()
     #    ef.check()
 
