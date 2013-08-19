@@ -38,7 +38,6 @@ if __name__ == '__main__':
         'omega_list':(G+A+C,G+A+B,G+A-D,G+A-E,G+F,0),
         'parameter':{'nup': [((1,3,0),(0,4,-1)),((1,3,0),(0,3,1))],
                       'e_amp': [(1,(1,)), (5,(-1,1))],
-                      'sweep_profile':[0,-4E5,4E5,500],
                       },
         'filename':filename
         }

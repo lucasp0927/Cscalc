@@ -8,6 +8,9 @@ import numpy as np
 import argparse
 
 def create_matrix_file(input,output,ef):
+"""
+Create the .p files contain supermatrix and other parameters.
+"""
     markov = Markov(input,output,ef)
     markov.prepareT()
     markov.prepareD()
@@ -26,6 +29,9 @@ def create_matrix_file(input,output,ef):
     markov.write()
     
 def freq_data(input,ef):
+"""
+Create frequency domain plot
+"""
     p = Pulse(input,ef)
     M = p.P - np.identity(p.N)
     p.freq_plot(2000,500)#better be multiple of process number
@@ -41,7 +47,6 @@ if __name__ == '__main__':
     input_name = args.name
     jobs = args.jobs
     base_name = str.split(args.name,'.')[0]
-    #factor = [1,2,3,4,5,6,7,8,9,10,100,200,300,400,500,600,700,800,900,1000]
     factor = eval(jobs)
     ef = ElectricField()
     
