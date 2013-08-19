@@ -17,7 +17,7 @@ mkl.set_num_threads(12)
 HBAR = 1.05457148e-34
 #HBAR = 1.0
 
-class Markov(object):
+class SuperMatrix(object):
     """
     """
     def __init__(self,file_in,file_out,ef):
@@ -212,7 +212,7 @@ class Markov(object):
 
 if __name__ == '__main__':
     ef = ElectricField()
-    markov = Markov(sys.argv[1],sys.argv[2],ef)
+    markov = SuperMatrix(sys.argv[1],sys.argv[2],ef)
     # markov.prepareT()
     # markov.prepareD()
     # markov.zeroOrder()

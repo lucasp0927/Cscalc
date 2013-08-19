@@ -1,7 +1,7 @@
 #!/usr/bin/python2
 from ElectricField import ElectricField
 from Pulse import Pulse
-from Markov import Markov
+from SuperMatrix import SuperMatrix
 import sys
 import time
 import numpy as np
@@ -9,24 +9,24 @@ import argparse
 
 def create_matrix_file(input,output,ef):
 """
-Create the .p files contain supermatrix and other parameters.
+Create the .p files that contain supermatrix and other parameters.
 """
-    markov = Markov(input,output,ef)
-    markov.prepareT()
-    markov.prepareD()
-    markov.zeroOrder()
+    supermatrix = SuperMatrix(input,output,ef)
+    supermatrix.prepareT()
+    supermatrix.prepareD()
+    supermatrix.zeroOrder()
     for i in xrange(50):
         print "-------------------------"
-        print "order ",markov.order+1
+        print "order ",supermatrix.order+1
         t1 = time.time()
-        norm = markov.addOrder2()
+        norm = supermatrix.addOrder2()
         print "difference norm %e" %norm        
         t2 = time.time()
         print 'took %0.3f ms' % ((t2-t1)*1000.0)
         if norm == 0:
             break
         sys.stdout.flush()
-    markov.write()
+    supermatrix.write()
     
 def freq_data(input,ef):
 """
