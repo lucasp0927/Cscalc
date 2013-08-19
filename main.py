@@ -8,9 +8,9 @@ import numpy as np
 import argparse
 
 def create_matrix_file(input,output,ef):
-"""
-Create the .p files that contain supermatrix and other parameters.
-"""
+    """
+    Create the .p files that contain supermatrix and other parameters.
+    """
     supermatrix = SuperMatrix(input,output,ef)
     supermatrix.prepareT()
     supermatrix.prepareD()
@@ -29,9 +29,9 @@ Create the .p files that contain supermatrix and other parameters.
     supermatrix.write()
     
 def freq_data(input,ef):
-"""
-Create frequency domain plot
-"""
+    """
+    Create frequency domain plot
+    """
     p = Pulse(input,ef)
     M = p.P - np.identity(p.N)
     p.freq_plot(2000,500)#better be multiple of process number
