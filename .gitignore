@@ -1,7 +1,26 @@
+# temp file
+*#
+*~
+
+# byte code
 *.pyc
+
+# configuration file
 *.txt
 *.p
+
+# shared object
 *.so
 .ropeproject/
 .zcache/
 *.DS_Store
+*.sh
+!job.sh
+
+# out file
+err
+out
+three/
+four/
+five/
+
