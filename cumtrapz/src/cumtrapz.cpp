@@ -66,7 +66,7 @@ void cumtrapz(double* A,double dt,int N,int num)
         }
     }
 }
-
+/*
 char *int2bin(int a, char *buffer, int buf_size, int& size) {
     buffer += (buf_size - 1);
 
@@ -246,3 +246,4 @@ void pade13(double* A,double* U, double* V, int N)
 
 }
 
+*/
