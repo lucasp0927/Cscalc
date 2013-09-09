@@ -1,0 +1,2 @@
+1. check if the energy of EM wave doubles when polarization is linear.
+
