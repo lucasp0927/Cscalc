@@ -37,7 +37,7 @@ class SuperMatrix(object):
         self.N = self.n**2 # the number of independent terms in  density matrix
         self.decoherence = self.parameter['decoherence_matrix']
         self.T = [] # time independent part d rho/ dt = T rho
-        self.D = [] # time independent part d rho/ dt = T rho
+        self.D = [] # time dependent part d rho/ dt = T rho
         self.final = np.zeros((self.N,self.N),complex) # final markov matrix
         self.EField = ef
         self.smpnum = self.EField.sample
@@ -90,7 +90,7 @@ class SuperMatrix(object):
                      self.T[self.ij2idx(j,i)][self.ij2idx(j,i)]+= 1.0j*self.rotate_omega(i,j)
 
     def prepareD(self):
-        self.D = np.zeros((self.N,self.N),complex) # time independent part d rho/ dt = T rho
+        self.D = np.zeros((self.N,self.N),complex) # time dependent part d rho/ dt = T rho
         for i in xrange(self.n):
             for j in xrange(self.n):
                 for k in xrange(self.n):
