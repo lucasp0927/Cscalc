@@ -3,16 +3,13 @@ from __future__ import division
 import math
 import numpy as np
 
-
 class Atom():
     """
     Calculate 3j 6j and dipole matrix elements.
     """
-
     def __init__(self, ):
         """
         """
-
     def bad_value (self,j1,j2,j3,m1,m2,m3):
         """
         Check
