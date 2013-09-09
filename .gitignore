@@ -17,10 +17,17 @@
 *.sh
 !job.sh
 
-# out file
+# output file
 err
 out
 three/
 four/
 five/
+*.log
+
+#latex file
+*.blg
+*.fls
+*.aux
+*.bbl
 
